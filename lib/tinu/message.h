@@ -42,7 +42,7 @@ MessageTag *msg_tag_dump(const gchar *tag, const gpointer data, gsize len);
 MessageTag *msg_tag_vprintf(const gchar *tag, const gchar *fmt, va_list vl);
 MessageTag *msg_tag_printf(const gchar *tag, const gchar *fmt, ...);
 
-const gchar *msg_format_priority(const Message *self);
+const gchar *msg_format_priority(gint priority);
 gint msg_get_priority_value(const gchar *name);
 
 gchar *msg_format_simple(const Message *self);

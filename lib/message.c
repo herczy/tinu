@@ -252,10 +252,10 @@ msg_tag_printf(const gchar *tag, const gchar *fmt, ...)
 }
 
 const gchar *
-msg_format_priority(const Message *self)
+msg_format_priority(gint priority)
 {
-  t_assert(self->m_priority >= LOG_EMERG && self->m_priority <= LOG_DEBUG);
-  return g_priority_names[self->m_priority];
+  t_assert(priority >= LOG_EMERG && priority <= LOG_DEBUG);
+  return g_priority_names[priority];
 }
 
 gint

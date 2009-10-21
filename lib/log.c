@@ -190,7 +190,7 @@ gboolean
 msg_stderr_handler(Message *msg, gpointer user_data)
 {
   gchar *buffer = msg_format_simple(msg);
-  fprintf(stderr, "[%s] %s\n", msg_format_priority(msg), buffer);
+  fprintf(stderr, "[%s] %s\n", msg_format_priority(msg->m_priority), buffer);
   t_free(buffer);
   return (gboolean)user_data;
 }
@@ -226,7 +226,7 @@ msg_stderr_fancy_handler(Message *msg, gpointer user_data)
         break;
     }
 
-  fprintf(stderr, "[%s%s\033[0m] %s", color, msg_format_priority(msg), msg->m_message);
+  fprintf(stderr, "[%s%s\033[0m] %s", color, msg_format_priority(msg->m_priority), msg->m_message);
 
   for (i = 0; i < msg->m_tag_count; i++)
     {
