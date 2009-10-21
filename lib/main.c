@@ -12,21 +12,6 @@
 
 #include <tinu/main.h>
 
-typedef struct _LeakInfo
-{
-  gboolean        m_enabled;
-  GHashTable     *m_leaks;
-  gpointer        m_watch_handle;
-} LeakInfo;
-
-typedef struct _MainTestContext
-{
-  TestContext     m_super;
-
-  LeakInfo        m_leak_test;
-  LeakInfo        m_leak_suite;
-} MainTestContext;
-
 typedef enum
 {
   STAT_VERB_NONE = 0,
@@ -36,8 +21,11 @@ typedef enum
   STAT_VERB_VERBOSE,
 } StatisticsVerbosity;
 
-static const TestContextFuncs g_main_test_context_funcs;
+//static const TestContextFuncs g_main_test_context_funcs;
 static GOptionEntry g_main_opt_entries[];
+
+static gboolean g_main_test_context_init = FALSE;
+static TestContext g_main_test_context;
 
 /* Options */
 static gboolean g_opt_fancy = FALSE;
@@ -45,9 +33,6 @@ static gboolean g_opt_silent = FALSE;
 static gboolean g_opt_syslog = FALSE;
 static gint g_opt_priority = LOG_WARNING;
 static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
-
-MainTestContext g_main_test_context;
-static gboolean g_main_test_context_init = FALSE;
 
 /* Error handling */
 static inline GQuark
@@ -66,33 +51,6 @@ _tinu_signal_handler(int signo)
 {
   log_error("Segmentation fault", msg_tag_trace_current("trace", 0), NULL);
   exit(1);
-}
-
-gboolean
-_tinu_opt_leakwatch(const gchar *opt G_GNUC_UNUSED, const gchar *value,
-  gpointer data, GError **error)
-{
-  if (!strcasecmp(value, "test"))
-    {
-      g_main_test_context.m_leak_test.m_enabled = TRUE;
-    }
-  else if (!strcasecmp(value, "suite"))
-    {
-      g_main_test_context.m_leak_suite.m_enabled = TRUE;
-    }
-  else if (!strcasecmp(value, "both"))
-    {
-      g_main_test_context.m_leak_test.m_enabled = TRUE;
-      g_main_test_context.m_leak_suite.m_enabled = TRUE;
-    }
-  else
-    {
-      g_set_error(error, log_error_main(), MAIN_ERROR_OPTIONS,
-                  "Unknown leakwatch option value `%s'", value);
-      return FALSE;
-    }
-
-  return TRUE;
 }
 
 gboolean
@@ -156,39 +114,11 @@ static GOptionEntry g_main_opt_entries[] = {
   { "log-level", 'v', 0, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_priority,
     "Set log priority (emergency, alert, critical, error, warning, notice, info, debug)",
     "level" },
-  { "leak-watch", 'l', 0, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_leakwatch,
-    "Set leakwatch level (suite=Watch per suite; test=Watch per test; both=Both)",
-    "watch-scope" },
   { "results", 'R', 0, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_stat_verb,
     "Set statistics verbosity (none, summary (default), suites, full, verbose)",
     "verbosity" },
   { NULL }
 };
-
-void
-_tinu_start_leakwatch(LeakInfo *self)
-{
-  if (self->m_enabled)
-    {
-      t_assert(self->m_leaks == NULL);
-      t_assert(self->m_watch_handle == NULL);
-      self->m_watch_handle = tinu_leakwatch_simple(&self->m_leaks);
-    }
-}
-
-void
-_tinu_stop_leakwatch(LeakInfo *self)
-{
-  if (self->m_enabled)
-    {
-      tinu_unregister_watch(self->m_watch_handle);
-      self->m_watch_handle = NULL;
-
-      tinu_leakwatch_simple_dump(self->m_leaks, LOG_WARNING);
-      g_hash_table_destroy(self->m_leaks);
-      self->m_leaks = NULL;
-    }
-}
 
 gboolean
 _tinu_options(int *argc, char **argv[])
@@ -307,7 +237,6 @@ _tinu_show_case(TestCase *test)
 void
 _tinu_show_results()
 {
-  TestContext *self = (TestContext *)&g_main_test_context.m_super;
   gint i, j;
 
   TestSuite *suite;
@@ -316,14 +245,14 @@ _tinu_show_results()
   if (g_opt_stat_verb == STAT_VERB_NONE)
     return;
 
-  _tinu_show_summary(&self->m_statistics);
+  _tinu_show_summary(&g_main_test_context.m_statistics);
 
   if (g_opt_stat_verb == STAT_VERB_SUMMARY)
     return;
 
-  for (i = 0; i < self->m_suites->len; i++)
+  for (i = 0; i < g_main_test_context.m_suites->len; i++)
     {
-      suite = g_ptr_array_index(self->m_suites, i);
+      suite = g_ptr_array_index(g_main_test_context.m_suites, i);
 
       _tinu_show_suite(suite);
 
@@ -343,7 +272,7 @@ _tinu_show_results()
     {
       fprintf(stderr, "    %-*s %*d\n",
               25, msg_format_priority(i),
-              10, self->m_statistics.m_messages[i]);
+              10, g_main_test_context.m_statistics.m_messages[i]);
     }
 }
 
@@ -392,15 +321,14 @@ tinu_test_add(const gchar *suite_name,
   if (!g_main_test_context_init)
     {
       /* Initialize test context */
-      memset(&g_main_test_context, 0, sizeof(MainTestContext));
-      test_context_init((TestContext *)&g_main_test_context, &g_main_test_context_funcs);
+      test_context_init((TestContext *)&g_main_test_context);
       g_main_test_context_init = TRUE;
     }
 
   test_add((TestContext *)&g_main_test_context, suite_name, test_name, setup, cleanup, func);
 }
 
-gboolean
+/*gboolean
 _test_prepare_suite(TestContext *context, TestSuite *suite)
 {
   MainTestContext *self = (MainTestContext *)context;
@@ -439,5 +367,5 @@ static const TestContextFuncs g_main_test_context_funcs = {
   _test_done_suite,
   _test_prepare_test,
   _test_done_test
-};
+};*/
 

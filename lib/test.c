@@ -20,6 +20,13 @@ static sighandler_t g_sigabrt_handler = NULL;
 
 jmp_buf g_jump;
 
+typedef struct _LeakInfo
+{
+  gboolean        m_enabled;
+  GHashTable     *m_leaks;
+  gpointer        m_watch_handle;
+} LeakInfo;
+
 void
 _signal_handler(int signo)
 {
@@ -60,17 +67,11 @@ _test_case_run(TestContext *self, TestCase *test)
 {
   TestCaseResult res = TEST_PASSED;
   gpointer ctx = NULL;
-  gpointer handler = tinu_register_message_handler(_test_message_counter, LOG_DEBUG, (gpointer)self);
+  gpointer log_handler = tinu_register_message_handler(_test_message_counter,
+                                                       LOG_DEBUG, (gpointer)self);
 
-  if (self->m_prepare_test &&
-      !self->m_prepare_test(self, test))
-    {
-      log_error("Could not prepare test case running",
-                msg_tag_str("case", test->m_name),
-                msg_tag_str("suite", test->m_suite->m_name), NULL);
-      res = TEST_FAILED;
-      goto exit;
-    }
+  GHashTable *leak_table = NULL;
+  gpointer leak_handler = tinu_leakwatch_simple(&leak_table);
 
   _signal_on();
 
@@ -90,6 +91,9 @@ _test_case_run(TestContext *self, TestCase *test)
                 msg_tag_int("signal", g_signal),
                 msg_tag_str("case", test->m_name),
                 msg_tag_str("suite", test->m_suite->m_name), NULL);
+
+      tinu_unregister_watch(leak_handler);
+      g_hash_table_destroy(leak_table);
     }
   else
     {
@@ -105,12 +109,14 @@ _test_case_run(TestContext *self, TestCase *test)
       log_notice("Test case run successfull",
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
+
+
+      tinu_unregister_watch(leak_handler);
+      tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
+      g_hash_table_destroy(leak_table);
     }
 
   _signal_off();
-
-  if (self->m_done_test)
-    self->m_done_test(self, test, res);
 
   if (res)
     {
@@ -125,8 +131,7 @@ _test_case_run(TestContext *self, TestCase *test)
 
   test->m_result = res;
 
-exit:
-  tinu_unregister_message_handler(handler);
+  tinu_unregister_message_handler(log_handler);
   return res;
 }
 
@@ -136,21 +141,8 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   gint i;
   gboolean res = TRUE;
 
-  if (self->m_prepare_suite &&
-      !self->m_prepare_suite(self, suite))
-    {
-      log_error("Suite prepare failed",
-                msg_tag_str("suite", suite->m_name), NULL);
-      return FALSE;
-    }
-
   for (i = 0; i < suite->m_tests->len; i++)
-    {
-      res &= TEST_PASSED == _test_case_run(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
-    }
-
-  if (self->m_done_suite)
-    self->m_done_suite(self, suite, res);
+    res &= TEST_PASSED == _test_case_run(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
 
   tinu_plog(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),
@@ -199,13 +191,8 @@ _test_lookup_case(TestSuite *suite, const gchar *test)
 }
 
 void
-test_context_init(TestContext *self, const TestContextFuncs *funcs)
+test_context_init(TestContext *self)
 {
-  self->m_prepare_suite = funcs->m_prepare_suite;
-  self->m_done_suite = funcs->m_done_suite;
-  self->m_prepare_test = funcs->m_prepare_test;
-  self->m_done_test = funcs->m_done_test;
-
   self->m_suites = g_ptr_array_new();
 }
 

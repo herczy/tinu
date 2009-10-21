@@ -45,14 +45,6 @@ struct _TestSuite
   gboolean        m_passed;
 };
 
-typedef struct _TestContextFuncs
-{
-  gboolean      (*m_prepare_suite)(TestContext *, TestSuite *);
-  void          (*m_done_suite)(TestContext *, TestSuite *, gboolean);
-  gboolean      (*m_prepare_test)(TestContext *, TestCase *);
-  void          (*m_done_test)(TestContext *, TestCase *, TestCaseResult);
-} TestContextFuncs;
-
 typedef struct _TestStatistics
 {
   guint32       m_messages[LOG_DEBUG + 1];
@@ -64,17 +56,12 @@ typedef struct _TestStatistics
 
 struct _TestContext
 {
-  gboolean      (*m_prepare_suite)(TestContext *, TestSuite *);
-  void          (*m_done_suite)(TestContext *, TestSuite *, gboolean);
-  gboolean      (*m_prepare_test)(TestContext *, TestCase *);
-  void          (*m_done_test)(TestContext *, TestCase *, TestCaseResult);
-
   GPtrArray      *m_suites;
 
   TestStatistics  m_statistics;
 };
 
-void test_context_init(TestContext *self, const TestContextFuncs *funcs);
+void test_context_init(TestContext *self);
 void test_context_destroy(TestContext *self);
 
 void test_add(TestContext *self,
