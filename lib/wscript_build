@@ -13,16 +13,16 @@ task.add_objects = task_static.target
 task.uselib = 'GLIB GTHREAD'
 task.install_path = '${PREFIX}/lib'
 
-#task = bld.new_task_gen('subst')
-#task.source = 'tinu.pc.in'
-#task.target = 'tinu.pc'
-#task.install_path = '${PREFIX}/lib/pkgconfig'
-#task.dict = {
-#  "PREFIX" : bld.env["PREFIX"],
-#  "VERSION" : bld.env['PCVERSION'],
-#  "CXXFLAGS" : "-I" + bld.env['PREFIX'] + '/include',
-#  "LDFLAGS" : "-ltinu"
-#}
+task = bld.new_task_gen('subst')
+task.source = 'tinu.pc.in'
+task.target = 'tinu.pc'
+task.install_path = '${PREFIX}/lib/pkgconfig'
+task.dict = {
+  "PREFIX" : bld.env["PREFIX"],
+  "VERSION" : bld.env['VERSION'],
+  "CXXFLAGS" : "-I" + bld.env['PREFIX'] + '/include',
+  "LDFLAGS" : "-ltinu"
+}
 
 # vim: syntax=python
 

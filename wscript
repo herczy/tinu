@@ -40,9 +40,8 @@ def configure(conf):
 def build(bld):
   bld.add_subdirs('lib test')
 
-  #bld.install_files('${PREFIX}/include/unittest', 'lib/unittest/*.h')
-  #bld.install_files('${PREFIX}/include/unittest', blddir + '/default/lib/unittest/*.h')
-  #bld.install_files('${PREFIX}/include/unittest', blddir + '/default/config.h')
-  #bld.install_files('${PREFIX}/include', 'lib/unittest/unittest.h')
+  bld.install_files('${PREFIX}/include/tinu', 'lib/tinu/*.h')
+  bld.install_files('${PREFIX}/include', 'lib/tinu.h')
+  bld.install_files('${PREFIX}/include/tinu', blddir + '/default/config.h')
 
 # vim: syntax=python
