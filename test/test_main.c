@@ -18,27 +18,25 @@ cleanup(gpointer ctx)
   t_free(ctx);
 }
 
-gboolean
+void
 succeed(gpointer ctx)
 {
   *(int *)ctx += 5;
-  return TRUE;
 }
 
-gboolean
+void
 fail(gpointer ctx G_GNUC_UNUSED)
 {
-  return FALSE;
+  TINU_ASSERT_TRUE(0);
 }
 
-gboolean
+void
 leak(gpointer ctx G_GNUC_UNUSED)
 {
   void *leakme = realloc(malloc(1024), 2);
-  return TRUE;
 }
 
-gboolean
+void
 segfault(gpointer ctx G_GNUC_UNUSED)
 {
   *(gint *)NULL = 1;

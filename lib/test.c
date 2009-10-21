@@ -23,6 +23,10 @@ jmp_buf g_jump;
 void
 _signal_handler(int signo)
 {
+  log_error("Signal received while running a test",
+            msg_tag_int("signal", signo),
+            msg_tag_trace_current("trace", 3), NULL);
+
   g_signal = signo;
   siglongjmp(g_jump, 1);
 }
@@ -30,6 +34,8 @@ _signal_handler(int signo)
 void
 _signal_on()
 {
+  g_signal = 0;
+
   g_sigsegv_handler = signal(SIGSEGV, _signal_handler);
   g_sigabrt_handler = signal(SIGABRT, _signal_handler);
 }
@@ -53,47 +59,40 @@ _test_case_run(TestContext *self, TestCase *test)
       log_error("Could not prepare test case running",
                 msg_tag_str("case", test->m_name),
                 msg_tag_str("suite", test->m_suite->m_name), NULL);
-      return -1;
+      return FALSE;
     }
-
-  if (test->m_setup)
-    res = test->m_setup(&ctx);
-
-  if (res && test->m_test)
-    res = test->m_test(ctx);
-
-  if (test->m_cleanup)
-    test->m_cleanup(ctx);
-
-  if (self->m_done_test)
-    self->m_done_test(self, test, res);
-
-  tinu_plog(res ? LOG_NOTICE : LOG_WARNING, "Test case run complete",
-            msg_tag_str("case", test->m_name),
-            msg_tag_str("suite", test->m_suite->m_name),
-            msg_tag_bool("result", res), NULL);
-
-  return res;
-}
-
-gboolean
-_test_case_run_isolated(TestContext *self, TestCase *test)
-{
-  gboolean res = TRUE;
 
   _signal_on();
 
   if (sigsetjmp(g_jump, 1) > 0)
     {
-      log_error("Signal received", msg_tag_int("signal", g_signal), NULL);
       res = FALSE;
+
+      tinu_plog(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
+                msg_tag_int("signal", g_signal),
+                msg_tag_str("case", test->m_name),
+                msg_tag_str("suite", test->m_suite->m_name), NULL);
     }
   else
     {
-      res = _test_case_run(self, test);
+      if (!test->m_setup || test->m_setup(&ctx))
+        {
+          if (test->m_test)
+            test->m_test(ctx);
+
+          if (test->m_cleanup)
+            test->m_cleanup(ctx);
+        }
+
+      log_notice("Test case run successfull",
+                 msg_tag_str("case", test->m_name),
+                 msg_tag_str("suite", test->m_suite->m_name), NULL);
     }
 
   _signal_off();
+
+  if (self->m_done_test)
+    self->m_done_test(self, test, res);
 
   return res;
 }
@@ -114,7 +113,7 @@ _test_suite_run(TestContext *self, TestSuite *suite)
 
   for (i = 0; i < suite->m_tests->len; i++)
     {
-      res &= _test_case_run_isolated(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
+      res &= _test_case_run(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
     }
 
   if (self->m_done_suite)
