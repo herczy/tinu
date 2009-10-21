@@ -1,6 +1,8 @@
 #ifndef _TINU_TEST_H
 #define _TINU_TEST_H
 
+#include <stdlib.h>
+
 #include <glib/gtypes.h>
 #include <glib/garray.h>
 
@@ -10,7 +12,7 @@ typedef struct _TestContext TestContext;
 
 typedef gboolean (*TestSetup)(gpointer *);
 typedef void (*TestCleanup)(gpointer);
-typedef gboolean (*TestFunction)(gpointer);
+typedef void (*TestFunction)(gpointer);
 
 struct _TestCase
 {
@@ -59,5 +61,35 @@ void test_add(TestContext *self,
               TestFunction func);
 
 gboolean tinu_test_all_run(TestContext *self);
+
+#define TINU_ASSERT_LOG_FAIL(cond)                          \
+  log_error("Assertion failed",                             \
+            msg_tag_str("condition", #cond),                \
+            msg_tag_str("file", __FILE__),                  \
+            msg_tag_str("function", __PRETTY_FUNCTION__),   \
+            msg_tag_int("line", __LINE__), NULL)
+
+#define TINU_ASSERT_LOG_PASS(cond)                          \
+  log_debug("Assertion passed",                             \
+            msg_tag_str("condition", #cond),                \
+            msg_tag_str("file", __FILE__),                  \
+            msg_tag_str("function", __PRETTY_FUNCTION__),   \
+            msg_tag_int("line", __LINE__), NULL)
+
+#define TINU_ASSERT_TRUE(cond)                              \
+  do                                                        \
+    {                                                       \
+      if (!(cond))                                          \
+        {                                                   \
+          TINU_ASSERT_LOG_FAIL(cond);                       \
+          abort();                                          \
+        }                                                   \
+      else                                                  \
+        {                                                   \
+          TINU_ASSERT_LOG_PASS(cond);                       \
+        }                                                   \
+    } while (0)
+
+#define TINU_ASSERT_FALSE(cond) TINU_ASSERT_TRUE(!(cond))
 
 #endif
