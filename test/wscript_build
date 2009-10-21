@@ -1,0 +1,21 @@
+def add_test(bld, name):
+  task = bld.new_task_gen('cc', 'cprogram')
+  task.target = 'test_%s' % name
+  task.includes = '. # ../lib ../lib/tinu'
+  task.source = 'test_%s.c' % name
+  #task.install_path = '${PREFIX}/share/unittest'
+  task.add_objects = 'static_tinu'
+  task.uselib = 'GLIB GTHREAD'
+  #task.uselib_local = "unittest"
+  
+  task.cflags = ['-g']
+  task.ldflags = ['-Wl,-E', '-rdynamic']
+
+add_test(bld, 'backtrace')
+add_test(bld, 'leakwatch')
+add_test(bld, 'log')
+add_test(bld, 'main')
+#add_test(bld, 'exception')
+
+# vim: syntax=python
+
