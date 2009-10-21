@@ -118,14 +118,12 @@ _test_case_run(TestContext *self, TestCase *test)
 
   _signal_off();
 
-  if (res)
+  if (res == TEST_PASSED)
     {
       self->m_statistics.m_passed++;
     }
   else
     {
-      if (g_signal == SIGSEGV)
-        self->m_statistics.m_sigsegv++;
       self->m_statistics.m_failed++;
     }
 
