@@ -6,6 +6,8 @@
 #include <glib/gtypes.h>
 #include <glib/garray.h>
 
+#include <tinu/message.h>
+
 typedef struct _TestCase TestCase;
 typedef struct _TestSuite TestSuite;
 typedef struct _TestContext TestContext;
@@ -13,6 +15,13 @@ typedef struct _TestContext TestContext;
 typedef gboolean (*TestSetup)(gpointer *);
 typedef void (*TestCleanup)(gpointer);
 typedef void (*TestFunction)(gpointer);
+
+typedef enum
+{
+  TEST_PASSED = 0,
+  TEST_FAILED,
+  TEST_SEGFAULT,
+} TestCaseResult;
 
 struct _TestCase
 {
@@ -23,6 +32,8 @@ struct _TestCase
   TestSetup       m_setup;
   TestCleanup     m_cleanup;
   TestFunction    m_test;
+
+  TestCaseResult  m_result;
 };
 
 struct _TestSuite
@@ -30,6 +41,8 @@ struct _TestSuite
   const gchar    *m_name;
 
   GPtrArray      *m_tests;
+
+  gboolean        m_passed;
 };
 
 typedef struct _TestContextFuncs
@@ -37,17 +50,28 @@ typedef struct _TestContextFuncs
   gboolean      (*m_prepare_suite)(TestContext *, TestSuite *);
   void          (*m_done_suite)(TestContext *, TestSuite *, gboolean);
   gboolean      (*m_prepare_test)(TestContext *, TestCase *);
-  void          (*m_done_test)(TestContext *, TestCase *, gboolean);
+  void          (*m_done_test)(TestContext *, TestCase *, TestCaseResult);
 } TestContextFuncs;
+
+typedef struct _TestStatistics
+{
+  guint32       m_messages[LOG_DEBUG + 1];
+  guint32       m_sigsegv;
+
+  guint32       m_passed;
+  guint32       m_failed;
+} TestStatistics;
 
 struct _TestContext
 {
   gboolean      (*m_prepare_suite)(TestContext *, TestSuite *);
   void          (*m_done_suite)(TestContext *, TestSuite *, gboolean);
   gboolean      (*m_prepare_test)(TestContext *, TestCase *);
-  void          (*m_done_test)(TestContext *, TestCase *, gboolean);
+  void          (*m_done_test)(TestContext *, TestCase *, TestCaseResult);
 
   GPtrArray      *m_suites;
+
+  TestStatistics  m_statistics;
 };
 
 void test_context_init(TestContext *self, const TestContextFuncs *funcs);

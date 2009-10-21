@@ -246,7 +246,7 @@ _test_prepare_test(TestContext *context, TestCase *test)
 }
 
 void
-_test_done_test(TestContext *context, TestCase *test, gboolean res)
+_test_done_test(TestContext *context, TestCase *test, TestCaseResult res)
 {
   MainTestContext *self = (MainTestContext *)context;
 

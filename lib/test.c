@@ -48,10 +48,19 @@ _signal_off()
 }
 
 gboolean
+_test_message_counter(Message *msg, gpointer user_data)
+{
+  TestContext *self = (TestContext *)user_data;
+  self->m_statistics.m_messages[msg->m_priority]++;
+  return TRUE;
+}
+
+TestCaseResult
 _test_case_run(TestContext *self, TestCase *test)
 {
+  TestCaseResult res = TEST_PASSED;
   gpointer ctx = NULL;
-  gboolean res = TRUE;
+  gpointer handler = tinu_register_message_handler(_test_message_counter, LOG_DEBUG, (gpointer)self);
 
   if (self->m_prepare_test &&
       !self->m_prepare_test(self, test))
@@ -59,14 +68,23 @@ _test_case_run(TestContext *self, TestCase *test)
       log_error("Could not prepare test case running",
                 msg_tag_str("case", test->m_name),
                 msg_tag_str("suite", test->m_suite->m_name), NULL);
-      return FALSE;
+      res = TEST_FAILED;
+      goto exit;
     }
 
   _signal_on();
 
   if (sigsetjmp(g_jump, 1) > 0)
     {
-      res = FALSE;
+      if (g_signal == SIGSEGV)
+        {
+          self->m_statistics.m_sigsegv++;
+          res = TEST_SEGFAULT;
+        }
+      else
+        {
+          res = TEST_FAILED;
+        }
 
       tinu_plog(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
                 msg_tag_int("signal", g_signal),
@@ -94,6 +112,21 @@ _test_case_run(TestContext *self, TestCase *test)
   if (self->m_done_test)
     self->m_done_test(self, test, res);
 
+  if (res)
+    {
+      self->m_statistics.m_passed++;
+    }
+  else
+    {
+      if (g_signal == SIGSEGV)
+        self->m_statistics.m_sigsegv++;
+      self->m_statistics.m_failed++;
+    }
+
+  test->m_result = res;
+
+exit:
+  tinu_unregister_message_handler(handler);
   return res;
 }
 
@@ -113,7 +146,7 @@ _test_suite_run(TestContext *self, TestSuite *suite)
 
   for (i = 0; i < suite->m_tests->len; i++)
     {
-      res &= _test_case_run(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
+      res &= TEST_PASSED == _test_case_run(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
     }
 
   if (self->m_done_suite)
@@ -122,6 +155,8 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   tinu_plog(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),
             msg_tag_bool("result", res), NULL);
+
+  suite->m_passed = res;
   return res;
 }
 
