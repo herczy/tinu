@@ -17,12 +17,6 @@ typedef void (*AllocCallback)(LeakwatchOperation operation,
                               Backtrace *trace,
                               gpointer user_data);
 
-/*gboolean tinu_leakwatch_init();
-void tinu_leakwatch_done();
-
-void tinu_leakwatch_enable();
-void tinu_leakwatch_disable();*/
-
 gpointer tinu_register_watch(AllocCallback callback, gpointer user_data);
 gboolean tinu_unregister_watch(gpointer handle);
 

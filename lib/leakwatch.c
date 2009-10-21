@@ -313,7 +313,6 @@ tinu_unregister_watch(gpointer handle)
 gpointer
 tinu_leakwatch_simple(GHashTable **result)
 {
-  /* t_assert(g_leakwatch_init); */
   t_assert(result);
   t_assert(*result == NULL);
 

@@ -23,7 +23,6 @@ jmp_buf g_jump;
 void
 _signal_handler(int signo)
 {
-  /* fprintf(stderr, "Signal: %d\n", signo); */
   g_signal = signo;
   siglongjmp(g_jump, 1);
 }

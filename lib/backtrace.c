@@ -281,9 +281,6 @@ backtrace_entry_parse(BacktraceEntry *self, const gchar *line)
           return 0;
         }
       self->m_file = strndup(line, len - 1);
-
-      /*log_info("No function found in line",
-               msg_tag_str("line", line), NULL);*/
       return 1;
     }
 
@@ -353,52 +350,3 @@ msg_tag_trace_current(const gchar *tag, int skip)
 
   return res;
 }
-
-gboolean
-backtrace_serialize(Backtrace *self, GByteArray *dest)
-{
-  gint i;
-
-  backtrace_lock(self);
-
-  t_putv(dest, self->m_length);
-
-  for (i = 0; i < self->m_length; i++)
-    {
-      t_puts(dest, self->m_names[i]);
-    }
-
-  backtrace_unlock(self);
-  return TRUE;
-}
-
-Backtrace *
-backtrace_deserialize(const GByteArray *data)
-{
-  gint pos = 0;
-  gint i;
-  Backtrace *res = t_new(Backtrace, 1);
-
-  res->m_refcnt = 1;
-#ifdef ENABLE_THREADS
-  res->m_lock = g_mutex_new();
-#endif
-
-  if (!t_getv(data, res->m_length))
-    goto error;
-
-  res->m_names = t_new(gchar *, res->m_length);
-
-  for (i = 0; i < res->m_length; i++)
-    {
-      if (!t_gets(data, &res->m_names[i], &pos))
-        goto error;
-    }
-
-  return res;
-
-error:
-  backtrace_unreference(res);
-  return NULL;
-}
-

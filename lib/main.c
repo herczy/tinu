@@ -2,7 +2,10 @@
 #include <string.h>
 #include <signal.h>
 
+#include <syslog.h>
+
 #include <glib/goption.h>
+#include <glib/gutils.h>
 
 #include <tinu/log.h>
 #include <tinu/leakwatch.h>
@@ -169,8 +172,9 @@ int
 tinu_main(int *argc, char **argv[])
 {
   gint res;
+  gchar *basename = g_path_get_basename(**argv);
 
-  //signal(SIGSEGV, _tinu_signal_handler);
+  signal(SIGSEGV, _tinu_signal_handler);
 
   if (!_tinu_options(argc, argv))
     return 1;
@@ -185,13 +189,14 @@ tinu_main(int *argc, char **argv[])
 
   if (g_opt_syslog)
     {
-      openlog(g_basename((*argv)[0]), LOG_PID, LOG_USER);
+      openlog(basename, LOG_PID, LOG_USER);
       tinu_register_message_handler(msg_syslog_handler, g_opt_priority, LOGMSG_PROPAGATE);
     }
 
   res = tinu_test_all_run((TestContext *)&g_main_test_context) ? 0 : 1;
 
   test_context_destroy((TestContext *)&g_main_test_context);
+  g_free(basename);
 
   return res;
 }

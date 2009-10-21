@@ -15,25 +15,8 @@ def configure(conf):
   from Options import options
   global VERSION
 
-  '''demangle = ' ''#include <cxxabi.h>
-
-int main()
-{
-  const char *fn = "_ZTVN4Test13CSimpleFormatE";
-  char tmp[1024];
-  size_t size = sizeof(tmp);
-  int status;
-
-  abi::__cxa_demangle(fn, tmp, &size, &status);
-  return 0;
-}
-'''
-
   conf.check_tool('gcc')
   conf.check_tool('misc')
-  #conf.check_tool('test')
-  #conf.check(lib='dl', mandatory=True)
-  #conf.check_cc(fragment=demangle, define_name='CAN_DEMANGLE', compile_mode = 'cxx', mandatory = True)
 
   conf.check_cfg(package='glib-2.0', args='--libs --cflags', uselib_store='GLIB', mandatory=True)
 

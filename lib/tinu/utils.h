@@ -4,7 +4,6 @@
 #include <glib/gtypes.h>
 #include <glib/garray.h>
 
-// TODO: Should make an abort if malloc fails
 #define t_new(type, count) \
   (type *)__allocate(sizeof(type) * (count))
 
@@ -25,19 +24,5 @@ void     __free(gpointer ptr);
 
 #define _strdup(str) ((str) ? strdup(str) : NULL)
 gchar *strndup(const gchar *str, gsize n);
-
-/* gpointer shmalloc(gsize size);
-gpointer shrealloc(gpointer ptr, gsize size);
-void shfree(gpointer ptr); */
-
-gboolean t_read(const GByteArray *src, gpointer dest, gsize len, gsize *pos);
-gboolean t_gets(const GByteArray *src, gchar **dest, gint *pos);
-
-void t_puts(GByteArray *dest, const gchar *src);
-
-#define t_putv(fd, p)   g_byte_array_append((fd), (const gpointer)&(p), sizeof(p))
-#define t_putp(fd, p)   g_byte_array_append((fd), (const gpointer)(p), sizeof(*(p)))
-#define t_getv(fd, p)   t_read((fd), (gpointer)&(p), sizeof(p), &pos)
-#define t_getp(fd, p)   t_read((fd), (gpointer)(p), sizeof(*(p)), &pos)
 
 #endif

@@ -53,7 +53,4 @@ void backtrace_entry_destroy(BacktraceEntry *self);
 MessageTag *msg_tag_trace(const gchar *tag, const Backtrace *trace);
 MessageTag *msg_tag_trace_current(const gchar *tag, int skip);
 
-gboolean backtrace_serialize(Backtrace *self, GByteArray *dest);
-Backtrace *backtrace_deserialize(const GByteArray *src);
-
 #endif

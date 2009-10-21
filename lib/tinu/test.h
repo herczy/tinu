@@ -1,10 +1,6 @@
 #ifndef _TINU_TEST_H
 #define _TINU_TEST_H
 
-#if 0
-#include "../vim.h"
-#endif
-
 #include <glib/gtypes.h>
 #include <glib/garray.h>
 

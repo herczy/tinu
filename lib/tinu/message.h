@@ -4,14 +4,8 @@
 #include <stdarg.h>
 #include <syslog.h>
 
-#include <tinu/channel.h>
-
 #include <glib/gtypes.h>
 #include <glib/garray.h>
-
-#if 0
-#include "../vim.h"
-#endif
 
 typedef struct _MessageTag
 {
@@ -52,8 +46,5 @@ const gchar *msg_format_priority(const Message *self);
 gint msg_get_priority_value(const gchar *name);
 
 gchar *msg_format_simple(const Message *self);
-
-gboolean msg_serialize(const Message *self, GByteArray *dest);
-Message *msg_deserialize(const GByteArray *data);
 
 #endif

@@ -5,6 +5,7 @@
 #include <errno.h>
 
 #include <glib/glist.h>
+#include <glib/gslist.h>
 #include <glib/gmessages.h>
 
 #include <tinu/cleanup.h>
@@ -23,7 +24,7 @@ static GStaticMutex g_log_lock = G_STATIC_MUTEX_INIT;
 #endif
 
 static GSList *g_log_list = NULL;
-static gint g_log_max_priority = -1;
+gint g_log_max_priority = -1;
 static gpointer g_log_cleanup_handle = NULL;
 
 static struct 
@@ -254,15 +255,6 @@ msg_fail_handler(Message *msg, gpointer user_data)
       abort();
     }
   return TRUE;
-}
-
-gboolean
-msg_file_handler(Message *msg, gpointer user_data)
-{
-  GByteArray *arr = g_byte_array_new();
-  msg_serialize(msg, arr);
-  write((int)user_data, arr->data, arr->len);
-  return FALSE;
 }
 
 void
