@@ -304,7 +304,11 @@ tinu_unregister_watch(gpointer handle)
     }
 
   _hook_resume();
-  _tinu_leakwatch_disable();
+  if (act)
+    _tinu_leakwatch_disable();
+  else
+    log_warn("Leakwatch handle is not registered",
+             msg_tag_ptr("handle", handle), NULL);
   _unlock;
 
   return res;
