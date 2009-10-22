@@ -49,7 +49,7 @@ gint tinu_log_max_priority();
                 msg_tag_str("filename", __FILE__),                      \
                 msg_tag_int("line", __LINE__),                          \
                 msg_tag_trace_current("trace", 3), NULL);               \
-      abort();                                                          \
+      exit(1);                                                          \
     }
 
 #define t_raw_assert(cond)                                              \
@@ -57,7 +57,7 @@ gint tinu_log_max_priority();
     {                                                                   \
       fprintf(stderr, "Raw assert `" # cond "` failed (%s:%d (%s))\n",  \
               __FILE__, __LINE__, __PRETTY_FUNCTION__);                 \
-      abort();                                                          \
+      exit(1);                                                          \
     }
 
 extern gint g_log_max_priority;
