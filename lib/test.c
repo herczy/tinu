@@ -65,8 +65,24 @@ _test_message_counter(Message *msg, gpointer user_data)
 TestCaseResult
 _test_case_run(TestContext *self, TestCase *test)
 {
-  TestCaseResult res = TEST_PASSED;
   gpointer ctx = NULL;
+
+  if (!test->m_setup || test->m_setup(&ctx))
+    {
+      if (test->m_test)
+        test->m_test(ctx);
+
+      if (test->m_cleanup)
+        test->m_cleanup(ctx);
+    }
+
+  return TEST_PASSED;
+}
+
+TestCaseResult
+_test_case_run_sighnd(TestContext *self, TestCase *test)
+{
+  TestCaseResult res = TEST_PASSED;
   gpointer log_handler = tinu_register_message_handler(_test_message_counter,
                                                        LOG_DEBUG, (gpointer)self);
 
@@ -97,19 +113,11 @@ _test_case_run(TestContext *self, TestCase *test)
     }
   else
     {
-      if (!test->m_setup || test->m_setup(&ctx))
-        {
-          if (test->m_test)
-            test->m_test(ctx);
-
-          if (test->m_cleanup)
-            test->m_cleanup(ctx);
-        }
+      _test_case_run(self, test);
 
       log_notice("Test case run successfull",
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
-
 
       tinu_unregister_watch(leak_handler);
       tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
@@ -140,7 +148,8 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   gboolean res = TRUE;
 
   for (i = 0; i < suite->m_tests->len; i++)
-    res &= TEST_PASSED == _test_case_run(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
+    res &= TEST_PASSED == (self->m_sighandle ? _test_case_run_sighnd : _test_case_run)
+                          (self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
 
   tinu_plog(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),

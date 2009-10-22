@@ -59,6 +59,8 @@ struct _TestContext
   GPtrArray      *m_suites;
 
   TestStatistics  m_statistics;
+
+  gboolean        m_sighandle;
 };
 
 void test_context_init(TestContext *self);
