@@ -9,7 +9,7 @@ blddir='_build'
 APPNAME='tinu'
 
 def set_options(opt):
-  opt.add_option('--enable-threads', dest='threads', action='store_true', default=False, help='Enable threads')
+  pass
 
 def configure(conf):
   from Options import options
@@ -20,10 +20,6 @@ def configure(conf):
 
   conf.check_cfg(package='glib-2.0', args='--libs --cflags', uselib_store='GLIB', mandatory=True)
   conf.check_cfg(package='applog', args='--libs --cflags', uselib_store='APPLOG', mandatory=True)
-
-  if options.threads:
-    conf.define('ENABLE_THREADS', 1)
-    conf.check_cfg(package='gthread-2.0', args='--libs --cflags', uselib_store='GTHREAD', mandatory=True)
 
   conf.env['PREFIX'] = options.prefix
   conf.env['APPNAME'] = APPNAME

@@ -6,11 +6,6 @@
 
 #include <applog/log.h>
 
-#ifdef ENABLE_THREADS
-#include <glib/gthread.h>
-#endif
-#include <glib/garray.h>
-
 typedef struct _BacktraceEntry
 {
   gpointer    m_ptr;
@@ -31,14 +26,6 @@ Backtrace *backtrace_create(guint32 skip);
 Backtrace *backtrace_create_depth(guint32 depth, guint32 skip);
 Backtrace *backtrace_reference(Backtrace *self);
 void backtrace_unreference(Backtrace *self);
-
-#ifdef ENABLE_THREADS
-#   define backtrace_lock(backtrace)      g_mutex_lock((backtrace)->m_lock);
-#   define backtrace_unlock(backtrace)    g_mutex_unlock((backtrace)->m_lock);
-#else
-#   define backtrace_lock(backtrace)
-#   define backtrace_unlock(backtrace)
-#endif
 
 guint32 backtrace_depth(const Backtrace *self);
 const gchar *backtrace_line(const Backtrace *self, guint32 line);

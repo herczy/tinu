@@ -15,16 +15,6 @@
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>
 
-#ifdef ENABLE_THREADS
-#define _lock   g_static_mutex_lock(&g_leakwatch_lock)
-#define _unlock g_static_mutex_unlock(&g_leakwatch_lock)
-
-static GStaticMutex g_leakwatch_lock = G_STATIC_MUTEX_INIT;
-#else
-#define _lock
-#define _unlock
-#endif
-
 static GSList *g_leakwatch_list = NULL;
 static gint g_leakwatch_count = 0;
 static gpointer g_leakwatch_cleanup_handle = NULL;
@@ -67,14 +57,12 @@ _leakwatch_malloc(size_t size, const void *caller)
 {
   void *res;
 
-  _lock;
   _hook_pause();
 
   res = g_leakwatch_malloc ? g_leakwatch_malloc(size, caller) : malloc(size);
   _leakwatch_alert(LEAKWATCH_OPERATION_MALLOC, NULL, res, size);
 
   _hook_resume();
-  _unlock;
   return res;
 }
 
@@ -83,14 +71,12 @@ _leakwatch_realloc(void *ptr, size_t newsize, const void *caller)
 {
   void *res;
 
-  _lock;
   _hook_pause();
 
   res = g_leakwatch_realloc ? g_leakwatch_realloc(ptr, newsize, caller) : realloc(ptr, newsize);
   _leakwatch_alert(LEAKWATCH_OPERATION_REALLOC, ptr, res, newsize);
 
   _hook_resume();
-  _unlock;
   return res;
 }
 
@@ -99,7 +85,6 @@ _leakwatch_free(void *ptr, const void *caller)
 {
   void *res;
 
-  _lock;
   _hook_pause();
 
   _leakwatch_alert(LEAKWATCH_OPERATION_FREE, ptr, NULL, 0);
@@ -110,7 +95,6 @@ _leakwatch_free(void *ptr, const void *caller)
     free(ptr);
 
   _hook_resume();
-  _unlock;
 }
 
 void
@@ -261,8 +245,6 @@ tinu_register_watch(AllocCallback callback, gpointer user_data)
 {
   struct _Leakwatch *lw;
 
-  _lock;
-
   if (!g_leakwatch_cleanup_handle)
     g_leakwatch_cleanup_handle = tinu_atexit(_tinu_leakwatch_clear, NULL);
 
@@ -276,7 +258,6 @@ tinu_register_watch(AllocCallback callback, gpointer user_data)
   g_leakwatch_list = g_slist_prepend(g_leakwatch_list, lw);
 
   _hook_resume();
-  _unlock;
   return (gpointer)lw;
 }
 
@@ -287,7 +268,6 @@ tinu_unregister_watch(gpointer handle)
   struct _Leakwatch *lw;
   gboolean res = FALSE;
 
-  _lock;
   _hook_pause();
 
   for (act = g_leakwatch_list; act; act = act->next)
@@ -310,7 +290,6 @@ tinu_unregister_watch(gpointer handle)
   else
     log_warn("Leakwatch handle is not registered",
              msg_tag_ptr("handle", handle), NULL);
-  _unlock;
 
   return res;
 }

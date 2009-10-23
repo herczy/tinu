@@ -14,9 +14,6 @@
 struct _Backtrace
 {
   gint        m_refcnt;
-#ifdef ENABLE_THREADS
-  GMutex     *m_lock;
-#endif
 
   guint32                 m_length;
   gchar                 **m_names;
@@ -108,10 +105,6 @@ backtrace_create_depth(guint32 depth, guint32 skip)
       res = t_new(Backtrace, 1);
 
       res->m_refcnt = 1;
-#ifdef ENABLE_THREADS
-      res->m_lock = g_mutex_new();
-#endif
-
       res->m_length = 0;
       res->m_names = NULL;
       return res;
@@ -126,12 +119,7 @@ backtrace_create_depth(guint32 depth, guint32 skip)
     }
 
   res = t_new(Backtrace, 1);
-
   res->m_refcnt = 1;
-#ifdef ENABLE_THREADS
-  res->m_lock = g_mutex_new();
-#endif
-
   res->m_length = nptr - skip;
   res->m_names = t_new(gchar *, res->m_length);
 
@@ -147,10 +135,7 @@ backtrace_create_depth(guint32 depth, guint32 skip)
 Backtrace *
 backtrace_reference(Backtrace *self)
 {
-  backtrace_lock(self);
   self->m_refcnt++;
-  backtrace_unlock(self);
-
   return self;
 }
 
@@ -161,8 +146,6 @@ backtrace_unreference(Backtrace *self)
 
   if (!self)
     return;
-
-  backtrace_lock(self);
 
   self->m_refcnt--;
 
@@ -175,8 +158,6 @@ backtrace_unreference(Backtrace *self)
       t_free(self->m_names);
       t_free(self);
     }
-
-  backtrace_unlock(self);
 }
 
 guint32
@@ -211,7 +192,6 @@ backtrace_dump(const Backtrace *self, DumpCallback callback, void *user_data)
   BacktraceEntry entry;
   guint32 i;
 
-  backtrace_lock(self);
   for (i = 0; i < self->m_length; i++)
     {
       if (!backtrace_entry_parse(&entry, self->m_names[i]))
@@ -221,7 +201,6 @@ backtrace_dump(const Backtrace *self, DumpCallback callback, void *user_data)
 
       backtrace_entry_destroy(&entry);
     }
-  backtrace_unlock(self);
 }
 
 gint
@@ -238,7 +217,7 @@ backtrace_entry_parse(BacktraceEntry *self, const gchar *line)
 
   memset(self, 0, sizeof(BacktraceEntry));
 
-  // Find offset (at the end)
+  /* Find offset (at the end) */
   for (i = len - 1; i >= 0 && (!start || !end); i--)
     {
       if (line[i] == ']')
@@ -319,7 +298,6 @@ msg_tag_trace(const gchar *tag, const Backtrace *trace)
   BacktraceEntry entry;
   guint32 i;
 
-  backtrace_lock(self);
   for (i = 0; i < trace->m_length; i++)
     {
       if (!backtrace_entry_parse(&entry, trace->m_names[i]) || !entry.m_function)
@@ -332,7 +310,6 @@ msg_tag_trace(const gchar *tag, const Backtrace *trace)
           g_string_append(str, ", ");
         }
     }
-  backtrace_unlock(self);
 
   res->m_tag = strdup(tag);
   res->m_value = strndup(str->str, str->len - 2);
