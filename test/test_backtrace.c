@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include <applog.h>
+
 #include <tinu/backtrace.h>
 
 void
@@ -22,7 +24,7 @@ internim_function()
 int
 main()
 {
-  tinu_register_message_handler(msg_stderr_handler, LOG_DEBUG, LOGMSG_PROPAGATE);
+  log_register_message_handler(msg_stderr_handler, LOG_DEBUG, LOGMSG_PROPAGATE);
   internim_function();
   return 0;
 }

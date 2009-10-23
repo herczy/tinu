@@ -5,14 +5,13 @@ def add_test(bld, name):
   task.source = 'test_%s.c' % name
   task.install_path = None
   task.add_objects = 'static_tinu'
-  task.uselib = 'GLIB GTHREAD'
+  task.uselib = 'GLIB GTHREAD APPLOG'
 
   task.cflags = ['-g']
   task.ldflags = ['-Wl,-E', '-rdynamic']
 
 add_test(bld, 'backtrace')
 add_test(bld, 'leakwatch')
-add_test(bld, 'log')
 add_test(bld, 'main')
 
 # vim: syntax=python

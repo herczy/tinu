@@ -10,6 +10,7 @@
 
 #include <config.h>
 
+#include <applog.h>
 #include <tinu/cleanup.h>
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>
@@ -198,19 +199,19 @@ _tinu_leakwatch_simple_dump(gpointer key, gpointer value, gpointer user_data)
   gint priority = (gint)user_data;
   MemoryEntry *self = (MemoryEntry *)value;
 
-  tinu_plog(priority, "Memory leak found",
+  log_format(priority, "Memory leak found",
             msg_tag_ptr("pointer", self->m_ptr),
             msg_tag_int("size", self->m_size), NULL);
 
   if (self->m_origin)
     {
-      tinu_plog(priority, "  Original allocator", NULL);
+      log_format(priority, "  Original allocator", NULL);
       backtrace_dump_log(self->m_origin, "    ", priority);
     }
 
   if (self->m_last)
     {
-      tinu_plog(priority, "  Last (re)allocator", NULL);
+      log_format(priority, "  Last (re)allocator", NULL);
       backtrace_dump_log(self->m_last, "    ", priority);
     }
 }

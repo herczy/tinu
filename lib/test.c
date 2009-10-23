@@ -83,8 +83,8 @@ TestCaseResult
 _test_case_run_sighnd(TestContext *self, TestCase *test)
 {
   TestCaseResult res = TEST_PASSED;
-  gpointer log_handler = tinu_register_message_handler(_test_message_counter,
-                                                       LOG_DEBUG, (gpointer)self);
+  gpointer log_handler = log_register_message_handler(_test_message_counter,
+                                                      LOG_DEBUG, (gpointer)self);
 
   GHashTable *leak_table = NULL;
   gpointer leak_handler = tinu_leakwatch_simple(&leak_table);
@@ -103,10 +103,10 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
           res = TEST_FAILED;
         }
 
-      tinu_plog(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
-                msg_tag_int("signal", g_signal),
-                msg_tag_str("case", test->m_name),
-                msg_tag_str("suite", test->m_suite->m_name), NULL);
+      log_format(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
+                 msg_tag_int("signal", g_signal),
+                 msg_tag_str("case", test->m_name),
+                 msg_tag_str("suite", test->m_suite->m_name), NULL);
 
       tinu_unregister_watch(leak_handler);
       g_hash_table_destroy(leak_table);
@@ -137,7 +137,7 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
 
   test->m_result = res;
 
-  tinu_unregister_message_handler(log_handler);
+  log_unregister_message_handler(log_handler);
   return res;
 }
 
@@ -151,7 +151,7 @@ _test_suite_run(TestContext *self, TestSuite *suite)
     res &= TEST_PASSED == (self->m_sighandle ? _test_case_run_sighnd : _test_case_run)
                           (self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
 
-  tinu_plog(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
+  log_format(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),
             msg_tag_bool("result", res), NULL);
 

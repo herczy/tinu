@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <tinu/log.h>
+#include <applog/log.h>
 
 #ifdef ENABLE_THREADS
 #include <glib/gthread.h>

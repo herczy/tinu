@@ -19,6 +19,7 @@ def configure(conf):
   conf.check_tool('misc')
 
   conf.check_cfg(package='glib-2.0', args='--libs --cflags', uselib_store='GLIB', mandatory=True)
+  conf.check_cfg(package='applog', args='--libs --cflags', uselib_store='APPLOG', mandatory=True)
 
   if options.threads:
     conf.define('ENABLE_THREADS', 1)

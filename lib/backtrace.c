@@ -4,7 +4,8 @@
 
 #include <glib/gstring.h>
 
-#include <tinu/log.h>
+#include <applog.h>
+
 #include <tinu/utils.h>
 #include <tinu/backtrace.h>
 
@@ -34,12 +35,12 @@ _backtrace_dump_log_callback(const BacktraceEntry *entry, gpointer user_data)
 
   if (entry == BACKTRACE_ENTRY_INVALID)
     {
-      tinu_plog(self->m_priority, self->m_prefix,
+      log_format(self->m_priority, self->m_prefix,
                 msg_tag_str("error", "invalid frame"), NULL);
       return;
     }
 
-  tinu_plog(self->m_priority, self->m_prefix,
+  log_format(self->m_priority, self->m_prefix,
             msg_tag_str("function", entry->m_function),
             msg_tag_str("file", entry->m_file),
             msg_tag_hex("offset", entry->m_offset),

@@ -4,7 +4,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <tinu/log.h>
 #include <tinu/utils.h>
 
 #include <glib/gmem.h>

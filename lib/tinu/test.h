@@ -6,7 +6,7 @@
 #include <glib/gtypes.h>
 #include <glib/garray.h>
 
-#include <tinu/message.h>
+#include <applog.h>
 
 typedef struct _TestCase TestCase;
 typedef struct _TestSuite TestSuite;

@@ -1,7 +1,8 @@
 #include <stdlib.h>
 
+#include <applog.h>
+
 #include <tinu/main.h>
-#include <tinu/log.h>
 #include <tinu/utils.h>
 
 gboolean

@@ -2,14 +2,12 @@
 #include <string.h>
 #include <signal.h>
 
-#include <syslog.h>
+#include <applog.h>
 
 #include <glib/goption.h>
 #include <glib/gutils.h>
 
-#include <tinu/log.h>
 #include <tinu/leakwatch.h>
-
 #include <tinu/main.h>
 
 typedef enum
@@ -131,7 +129,7 @@ _tinu_options(int *argc, char **argv[])
   GOptionContext *context;
   gpointer watch;
 
-  watch = tinu_register_message_handler(msg_stderr_handler, LOG_ERR, LOGMSG_PROPAGATE);
+  watch = log_register_message_handler(msg_stderr_handler, LOG_ERR, LOGMSG_PROPAGATE);
 
   context = g_option_context_new("Test runner");
   g_option_context_add_main_entries(context, g_main_opt_entries, NULL);
@@ -145,7 +143,7 @@ _tinu_options(int *argc, char **argv[])
       return FALSE;
     }
 
-  tinu_unregister_message_handler(watch);
+  log_unregister_message_handler(watch);
   return TRUE;
 }
 
@@ -280,6 +278,12 @@ _tinu_show_results()
     }
 }
 
+void
+_tinu_log_clear(gpointer user_data G_GNUC_UNUSED)
+{
+  log_clear();
+}
+
 int
 tinu_main(int *argc, char **argv[])
 {
@@ -291,18 +295,20 @@ tinu_main(int *argc, char **argv[])
   if (!_tinu_options(argc, argv))
     return 1;
 
+  tinu_atexit(_tinu_log_clear);
+
   if (!g_opt_silent)
     {
       if (g_opt_fancy)
-        tinu_register_message_handler(msg_stderr_fancy_handler, g_opt_priority, LOGMSG_PROPAGATE);
+        log_register_message_handler(msg_stderr_fancy_handler, g_opt_priority, LOGMSG_PROPAGATE);
       else
-        tinu_register_message_handler(msg_stderr_handler, g_opt_priority, LOGMSG_PROPAGATE);
+        log_register_message_handler(msg_stderr_handler, g_opt_priority, LOGMSG_PROPAGATE);
     }
 
   if (g_opt_syslog)
     {
       openlog(basename, LOG_PID, LOG_USER);
-      tinu_register_message_handler(msg_syslog_handler, g_opt_priority, LOGMSG_PROPAGATE);
+      log_register_message_handler(msg_syslog_handler, g_opt_priority, LOGMSG_PROPAGATE);
     }
 
   g_main_test_context.m_sighandle = g_opt_sighandle;

@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <applog.h>
+
 #include <tinu/utils.h>
-#include <tinu/log.h>
 #include <tinu/leakwatch.h>
 
 void
@@ -39,8 +40,8 @@ main()
   gchar *x;
   gpointer /* ptr1, ptr2, ptr3, */ watch;
 
-  tinu_register_message_handler(leakinfo, LOG_DEBUG, (gpointer)"leak");
-  tinu_register_message_handler(msg_fail_handler, LOG_CRIT, (gpointer)LOG_CRIT);
+  log_register_message_handler(leakinfo, LOG_DEBUG, (gpointer)"leak");
+  log_register_message_handler(msg_fail_handler, LOG_CRIT, (gpointer)LOG_CRIT);
 
   /* tinu_leakwatch_init(); */
 
