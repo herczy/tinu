@@ -61,6 +61,7 @@ struct _TestContext
   TestStatistics  m_statistics;
 
   gboolean        m_sighandle;
+  gboolean        m_leakwatch;
 };
 
 void test_context_init(TestContext *self);

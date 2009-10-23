@@ -87,7 +87,7 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
                                                       LOG_DEBUG, (gpointer)self);
 
   GHashTable *leak_table = NULL;
-  gpointer leak_handler = tinu_leakwatch_simple(&leak_table);
+  gpointer leak_handler = (self->m_leakwatch ? tinu_leakwatch_simple(&leak_table) : NULL);
 
   _signal_on();
 
@@ -108,8 +108,11 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
 
-      tinu_unregister_watch(leak_handler);
-      g_hash_table_destroy(leak_table);
+      if (leak_handler)
+        {
+          tinu_unregister_watch(leak_handler);
+          g_hash_table_destroy(leak_table);
+        }
     }
   else
     {
@@ -119,9 +122,12 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
 
-      tinu_unregister_watch(leak_handler);
-      tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
-      g_hash_table_destroy(leak_table);
+      if (leak_handler)
+        {
+          tinu_unregister_watch(leak_handler);
+          tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
+          g_hash_table_destroy(leak_table);
+        }
     }
 
   _signal_off();

@@ -30,6 +30,7 @@ static gboolean g_opt_fancy = FALSE;
 static gboolean g_opt_silent = FALSE;
 static gboolean g_opt_syslog = FALSE;
 static gboolean g_opt_sighandle = TRUE;
+static gboolean g_opt_leakwatch = TRUE;
 static gint g_opt_priority = LOG_WARNING;
 static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 
@@ -116,6 +117,8 @@ static GOptionEntry g_main_opt_entries[] = {
   { "results", 'R', 0, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_stat_verb,
     "Set statistics verbosity (none, summary (default), suites, full, verbose)",
     "verbosity" },
+  { "no-leakwatch", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, (gpointer)&g_opt_leakwatch,
+    "Disable leakwatcher", NULL },
   { "no-sighandle", 0, G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, 
     (gpointer)&g_opt_sighandle,
     "Don't handle signals from test", NULL },
@@ -312,6 +315,7 @@ tinu_main(int *argc, char **argv[])
     }
 
   g_main_test_context.m_sighandle = g_opt_sighandle;
+  g_main_test_context.m_leakwatch = g_opt_leakwatch;
 
   res = tinu_test_all_run((TestContext *)&g_main_test_context) ? 0 : 1;
 
