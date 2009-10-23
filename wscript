@@ -5,7 +5,7 @@ from TaskGen import *
 
 VERSION = '0.1'
 srcdir='.'
-blddir='_build'
+blddir='_build_'
 APPNAME='tinu'
 
 def set_options(opt):

@@ -3,7 +3,7 @@
 .waf*
 conthere.vim
 waf
-_build
+_build_
 .old*
 .unused
 vim.h
