@@ -10,6 +10,8 @@
 #include <tinu/leakwatch.h>
 #include <tinu/main.h>
 
+#include <config.h>
+
 typedef enum
 {
   STAT_VERB_NONE = 0,
@@ -31,6 +33,7 @@ static gboolean g_opt_silent = FALSE;
 static gboolean g_opt_syslog = FALSE;
 static gboolean g_opt_sighandle = TRUE;
 static gboolean g_opt_leakwatch = FALSE;
+static gboolean g_opt_version = FALSE;
 static gint g_opt_priority = LOG_WARNING;
 static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 
@@ -106,6 +109,7 @@ _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
   return TRUE;
 }
 
+
 static GOptionEntry g_main_opt_entries[] = {
   { "fancy-log", 'c', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_fancy,
     "Colourfull logging to stderr", NULL },
@@ -126,8 +130,25 @@ static GOptionEntry g_main_opt_entries[] = {
     "Don't handle signals from test", NULL },
   { "suite", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_suite,
     "Run only the given suite", NULL },
+  { "version", 'V', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_version,
+    "Print version", NULL },
   { NULL }
 };
+
+static void
+_tinu_version()
+{
+  fprintf(stderr, APPNAME " version " VERSION "\n"
+                  "Build time: " BUILDTIME "\n"
+#ifdef GIT_BRANCH
+                  "Git branch: " GIT_BRANCH "\n"
+#endif
+#ifdef GIT_COMMIT
+                  "Git commit ID: " GIT_COMMIT "\n"
+#endif
+                  );
+  exit(1);
+}
 
 gboolean
 _tinu_options(int *argc, char **argv[])
@@ -307,6 +328,9 @@ tinu_main(int *argc, char **argv[])
 
   if (!_tinu_options(argc, argv))
     return 1;
+
+  if (g_opt_version)
+    _tinu_version();
 
   tinu_atexit(_tinu_log_clear);
 

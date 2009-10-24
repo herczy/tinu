@@ -3,10 +3,32 @@ import tempfile
 
 from TaskGen import *
 
+def rdfile(fn):
+  f = open(fn, 'r')
+  res = f.read()
+  f.close()
+
+  return res.strip()
+
 VERSION = '0.1'
+if os.access('VERSION', os.R_OK):
+  VERSION = rdfile('VERSION')
 srcdir='.'
 blddir='_build_'
 APPNAME='tinu'
+TIME=time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
+
+def git_revision():
+  if not os.access('.git/HEAD', os.R_OK):
+    return None, None
+
+  head = rdfile('.git/HEAD')
+  branch = head[5:]
+
+  rev = rdfile('.git/' + branch)
+  branch = branch.split('/')[-1]
+
+  return branch, rev
 
 def set_options(opt):
   pass
@@ -31,6 +53,16 @@ def configure(conf):
 
   conf.define('APPNAME', APPNAME)
   conf.define('VERSION', str(VERSION))
+  conf.define('BUILDTIME', TIME)
+
+  conf.check_message_custom('build time', '', TIME)
+
+  branch, rev = git_revision()
+  if branch:
+    conf.define('GIT_BRANCH', branch)
+    conf.define('GIT_COMMIT', rev)
+    conf.check_message_custom('git branch', '', branch)
+    conf.check_message_custom('git commit id', '', rev)
 
   conf.write_config_header('config.h')
 
