@@ -34,6 +34,8 @@ static gboolean g_opt_leakwatch = TRUE;
 static gint g_opt_priority = LOG_WARNING;
 static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 
+static const gchar *g_opt_suite = NULL;
+
 /* Error handling */
 static inline GQuark
 log_error_main()
@@ -122,6 +124,8 @@ static GOptionEntry g_main_opt_entries[] = {
   { "no-sighandle", 0, G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, 
     (gpointer)&g_opt_sighandle,
     "Don't handle signals from test", NULL },
+  { "suite", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_suite,
+    "Run only the given suite", NULL },
   { NULL }
 };
 
@@ -259,6 +263,9 @@ _tinu_show_results()
     {
       suite = g_ptr_array_index(g_main_test_context.m_suites, i);
 
+      if (g_opt_suite && strcmp(g_opt_suite, suite->m_name) != 0)
+        continue;
+
       _tinu_show_suite(suite);
 
       if (g_opt_stat_verb > STAT_VERB_SUITES)
@@ -267,6 +274,9 @@ _tinu_show_results()
             _tinu_show_case(g_ptr_array_index(suite->m_tests, j));
           fprintf(stderr, "\n");
         }
+
+      if (g_opt_suite)
+        break;
     }
 
   if (g_opt_stat_verb <= STAT_VERB_FULL)
@@ -290,7 +300,7 @@ _tinu_log_clear(gpointer user_data G_GNUC_UNUSED)
 int
 tinu_main(int *argc, char **argv[])
 {
-  gint res;
+  gboolean res;
   gchar *basename = g_path_get_basename(**argv);
 
   signal(SIGSEGV, _tinu_signal_handler);
@@ -317,14 +327,17 @@ tinu_main(int *argc, char **argv[])
   g_main_test_context.m_sighandle = g_opt_sighandle;
   g_main_test_context.m_leakwatch = g_opt_leakwatch;
 
-  res = tinu_test_all_run((TestContext *)&g_main_test_context) ? 0 : 1;
+  if (g_opt_suite)
+    res = tinu_test_suite_run(&g_main_test_context, g_opt_suite);
+  else
+    res = tinu_test_all_run(&g_main_test_context);
 
   _tinu_show_results();
 
-  test_context_destroy((TestContext *)&g_main_test_context);
+  test_context_destroy(&g_main_test_context);
   g_free(basename);
 
-  return res;
+  return res ? 0 : 1;
 }
 
 void

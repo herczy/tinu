@@ -166,7 +166,7 @@ _test_suite_run(TestContext *self, TestSuite *suite)
 }
 
 static TestSuite *
-_test_suite_lookup_new(TestContext *self, const gchar *suite)
+_test_suite_lookup(TestContext *self, const gchar *suite, gboolean new)
 {
   guint i;
   TestSuite *res = NULL;
@@ -177,6 +177,9 @@ _test_suite_lookup_new(TestContext *self, const gchar *suite)
       if (!strcmp(res->m_name, suite))
         goto exit;
     }
+
+  if (!new)
+    goto exit;
 
   res = t_new(TestSuite, 1);
   res->m_name = suite;
@@ -223,7 +226,7 @@ test_add(TestContext *self,
          TestCleanup cleanup,
          TestFunction func)
 {
-  TestSuite *suite = _test_suite_lookup_new(self, suite_name);
+  TestSuite *suite = _test_suite_lookup(self, suite_name, TRUE);
   TestCase *res = _test_lookup_case(suite, test_name);
 
   if (res)
@@ -265,5 +268,19 @@ tinu_test_all_run(TestContext *self)
     }
 
   return res;
+}
+
+gboolean
+tinu_test_suite_run(TestContext *self, const gchar *suite_name)
+{
+  TestSuite *suite = _test_suite_lookup(self, suite_name, FALSE);
+
+  if (!suite)
+    {
+      log_error("Suite does not exist", msg_tag_str("suite", suite_name), NULL);
+      return FALSE;
+    }
+
+  return _test_suite_run(self, suite);
 }
 
