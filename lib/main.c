@@ -38,6 +38,7 @@ static gint g_opt_priority = LOG_WARNING;
 static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 
 static const gchar *g_opt_suite = NULL;
+static const gchar *g_opt_file = NULL;
 
 /* Error handling */
 static inline GQuark
@@ -117,6 +118,8 @@ static GOptionEntry g_main_opt_entries[] = {
     "Do not log to stderr", NULL },
   { "syslog", 'S', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_syslog,
     "Log using standard syslog functions (with the 'user' facility", NULL },
+  { "file", 'f', 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_file,
+    "Log into a file", NULL },
   { "log-level", 'v', 0, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_priority,
     "Set log priority (emergency, alert, critical, error, warning, notice, info, debug)",
     "level" },
@@ -321,6 +324,8 @@ _tinu_log_clear(gpointer user_data G_GNUC_UNUSED)
 int
 tinu_main(int *argc, char **argv[])
 {
+  FILE *log = NULL;
+  gpointer handle = NULL;
   gboolean res;
   gchar *basename = g_path_get_basename(**argv);
 
@@ -348,6 +353,16 @@ tinu_main(int *argc, char **argv[])
       log_register_message_handler(msg_syslog_handler, g_opt_priority, LOGMSG_PROPAGATE);
     }
 
+  if (g_opt_file)
+    {
+      log = fopen(g_opt_file, "a");
+
+      if (log)
+        handle = log_register_message_handler(msg_file_handler, g_opt_priority, (gpointer)log);
+      else
+        log_error("Cannot open logfile", msg_tag_str("file", g_opt_file), NULL);
+    }
+
   g_main_test_context.m_sighandle = g_opt_sighandle;
   g_main_test_context.m_leakwatch = g_opt_leakwatch;
 
@@ -361,6 +376,12 @@ tinu_main(int *argc, char **argv[])
 
   test_context_destroy(&g_main_test_context);
   g_free(basename);
+
+  if (log)
+    {
+      log_unregister_message_handler(handle);
+      fclose(log);
+    }
 
   return res ? 0 : 1;
 }
