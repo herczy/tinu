@@ -118,9 +118,18 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
     {
       res = _test_case_run(self, test);
 
-      log_notice("Test case run successfull",
-                 msg_tag_str("case", test->m_name),
-                 msg_tag_str("suite", test->m_suite->m_name), NULL);
+      if (res == TEST_PASSED)
+        {
+          log_notice("Test case run successfull",
+                     msg_tag_str("case", test->m_name),
+                     msg_tag_str("suite", test->m_suite->m_name), NULL);
+        }
+      else
+        {
+          log_warn("Test case run failed",
+                   msg_tag_str("case", test->m_name),
+                   msg_tag_str("suite", test->m_suite->m_name), NULL);
+        }
 
       if (leak_handler)
         {
