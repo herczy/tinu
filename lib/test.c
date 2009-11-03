@@ -67,14 +67,14 @@ _test_case_run(TestContext *self, TestCase *test)
 {
   gpointer ctx = NULL;
 
-  if (!test->m_setup || test->m_setup(&ctx))
-    {
-      if (test->m_test)
-        test->m_test(ctx);
+  if (test->m_setup && !test->m_setup(&ctx))
+    return TEST_FAILED;
 
-      if (test->m_cleanup)
-        test->m_cleanup(ctx);
-    }
+  if (test->m_test)
+    test->m_test(ctx);
+
+  if (test->m_cleanup)
+    test->m_cleanup(ctx);
 
   return TEST_PASSED;
 }
@@ -116,7 +116,7 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
     }
   else
     {
-      _test_case_run(self, test);
+      res = _test_case_run(self, test);
 
       log_notice("Test case run successfull",
                  msg_tag_str("case", test->m_name),
