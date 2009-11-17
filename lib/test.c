@@ -117,7 +117,7 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
   g_test_context.uc_stack.ss_sp = stack;
   g_test_context.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
   g_test_context.uc_link = &main_ctx;
-  makecontext(&g_test_context, &_test_case_run_intern, 3, self, test, &res);
+  makecontext(&g_test_context, (void (*)())(&_test_case_run_intern), 3, self, test, &res);
 
   if (swapcontext(&main_ctx, &g_test_context) == -1)
     {
