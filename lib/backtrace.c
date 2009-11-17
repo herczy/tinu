@@ -266,13 +266,20 @@ backtrace_entry_parse(BacktraceEntry *self, const gchar *line)
 
   if (plus)
     {
-      self->m_offset = strtoul(line + plus + 3, &endp, 16);
-
-      if (*endp != ')')
+      if (line[plus + 3] == '0' && line[plus + 4] == ')')
         {
-          log_warn("Can not convert offset in line",
-                 msg_tag_str("line", line), NULL);
           self->m_offset = 0;
+        }
+      else
+        {
+          self->m_offset = strtoul(line + plus + 3, &endp, 16);
+
+          if (*endp != ')')
+            {
+              log_warn("Can not convert offset in line",
+                       msg_tag_str("line", line), NULL);
+              self->m_offset = 0;
+            }
         }
     }
   else
