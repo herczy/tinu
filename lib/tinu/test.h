@@ -76,6 +76,7 @@ void test_add(TestContext *self,
               TestFunction func);
 
 gboolean tinu_test_all_run(TestContext *self);
+gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
 
 #define TINU_ASSERT_LOG_FAIL(cond)                          \
   log_error("Assertion failed",                             \
