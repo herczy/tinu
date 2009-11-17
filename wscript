@@ -31,7 +31,7 @@ def git_revision():
   return branch, rev
 
 def set_options(opt):
-  pass
+  opt.add_option('--context-stack', action='store', type='int', dest='stacksize', default=128)
 
 def configure(conf):
   from Options import options
@@ -56,6 +56,9 @@ def configure(conf):
   conf.define('BUILDTIME', TIME)
 
   conf.check_message_custom('build time', '', TIME)
+
+  conf.check_message_custom('test context stack size', '', "%d kb" % Options.options.stacksize)
+  conf.define('TEST_CTX_STACK_SIZE', Options.options.stacksize * 1024)
 
   branch, rev = git_revision()
   if branch:

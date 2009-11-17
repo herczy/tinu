@@ -1,13 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <setjmp.h>
+#include <ucontext.h>
 #include <signal.h>
 
 #include <tinu/utils.h>
 #include <tinu/test.h>
 #include <tinu/backtrace.h>
 #include <tinu/leakwatch.h>
+
+#include <config.h>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int);
@@ -18,7 +20,7 @@ static gint g_signal = 0;
 static sighandler_t g_sigsegv_handler = NULL;
 static sighandler_t g_sigabrt_handler = NULL;
 
-jmp_buf g_jump;
+ucontext_t g_test_context;
 
 typedef struct _LeakInfo
 {
@@ -35,7 +37,7 @@ _signal_handler(int signo)
             msg_tag_trace_current("trace", 3), NULL);
 
   g_signal = signo;
-  siglongjmp(g_jump, 1);
+  setcontext(g_test_context.uc_link);
 }
 
 void
@@ -62,13 +64,16 @@ _test_message_counter(Message *msg, gpointer user_data)
   return TRUE;
 }
 
-TestCaseResult
-_test_case_run(TestContext *self, TestCase *test)
+void
+_test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
 {
   gpointer ctx = NULL;
 
   if (test->m_setup && !test->m_setup(&ctx))
-    return TEST_FAILED;
+    {
+      *result = TEST_FAILED;
+      return;
+    }
 
   if (test->m_test)
     test->m_test(ctx);
@@ -76,7 +81,15 @@ _test_case_run(TestContext *self, TestCase *test)
   if (test->m_cleanup)
     test->m_cleanup(ctx);
 
-  return TEST_PASSED;
+  *result = TEST_PASSED;
+}
+
+TestCaseResult
+_test_case_run(TestContext *self, TestCase *test)
+{
+  TestCaseResult res;
+  _test_case_run_intern(self, test, &res);
+  return res;
 }
 
 TestCaseResult
@@ -89,71 +102,88 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
   GHashTable *leak_table = NULL;
   gpointer leak_handler = (self->m_leakwatch ? tinu_leakwatch_simple(&leak_table) : NULL);
 
+  gpointer stack = g_malloc0(TEST_CTX_STACK_SIZE);
+
+  ucontext_t main_ctx;
+
   _signal_on();
 
-  if (sigsetjmp(g_jump, 1) > 0)
+  if (getcontext(&g_test_context) == -1)
     {
-      if (g_signal == SIGSEGV)
-        {
-          self->m_statistics.m_sigsegv++;
-          res = TEST_SEGFAULT;
-        }
-      else
-        {
-          res = TEST_FAILED;
-        }
-
-      log_format(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
-                 msg_tag_int("signal", g_signal),
-                 msg_tag_str("case", test->m_name),
-                 msg_tag_str("suite", test->m_suite->m_name), NULL);
-
-      if (leak_handler)
-        {
-          tinu_unregister_watch(leak_handler);
-          g_hash_table_destroy(leak_table);
-        }
+      log_error("Cannot get main context", msg_tag_errno(), NULL);
+      goto internal_error;
     }
-  else
-    {
-      res = _test_case_run(self, test);
 
+  g_test_context.uc_stack.ss_sp = stack;
+  g_test_context.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
+  g_test_context.uc_link = &main_ctx;
+  makecontext(&g_test_context, &_test_case_run_intern, 3, self, test, &res);
+
+  if (swapcontext(&main_ctx, &g_test_context) == -1)
+    {
+      log_error("Cannot change context", msg_tag_errno(), NULL);
+      goto internal_error;
+    }
+
+  g_free(stack);
+
+  _signal_off();
+
+  if (g_signal == 0)
+    {
       if (res == TEST_PASSED)
         {
+          self->m_statistics.m_passed++;
+
           log_notice("Test case run successfull",
                      msg_tag_str("case", test->m_name),
                      msg_tag_str("suite", test->m_suite->m_name), NULL);
         }
       else
         {
+          self->m_statistics.m_failed++;
+
           log_warn("Test case run failed",
                    msg_tag_str("case", test->m_name),
                    msg_tag_str("suite", test->m_suite->m_name), NULL);
         }
-
-      if (leak_handler)
-        {
-          tinu_unregister_watch(leak_handler);
-          tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
-          g_hash_table_destroy(leak_table);
-        }
-    }
-
-  _signal_off();
-
-  if (res == TEST_PASSED)
-    {
-      self->m_statistics.m_passed++;
     }
   else
     {
-      self->m_statistics.m_failed++;
+      if (g_signal == SIGSEGV)
+        {
+          res = TEST_SEGFAULT;
+          self->m_statistics.m_sigsegv++;
+        }
+      else
+        {
+          res = TEST_FAILED;
+          self->m_statistics.m_failed++;
+        }
+
+      log_format(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
+                 msg_tag_int("signal", g_signal),
+                 msg_tag_str("case", test->m_name),
+                 msg_tag_str("suite", test->m_suite->m_name), NULL);
     }
+
+    if (leak_handler)
+      {
+        tinu_unregister_watch(leak_handler);
+        if (res == TEST_PASSED)
+          tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
+        g_hash_table_destroy(leak_table);
+      }
 
   test->m_result = res;
 
   log_unregister_message_handler(log_handler);
   return res;
+
+internal_error:
+  test->m_result = TEST_INTERNAL;
+  self->m_statistics.m_failed++;
+  return TEST_INTERNAL;
 }
 
 gboolean

@@ -243,6 +243,10 @@ _tinu_show_case(TestCase *test)
           case TEST_SEGFAULT :
             fprintf(stderr, "\033[41m\033[1;37msegfault\033[0m\n");
             break;
+
+          case TEST_INTERNAL :
+            fprintf(stderr, "\033[41m\033[1;37minternal error\033[0m\n");
+            break;
         }
 
     }
@@ -262,6 +266,10 @@ _tinu_show_case(TestCase *test)
 
           case TEST_SEGFAULT :
             fprintf(stderr, "segfault\n");
+            break;
+
+          case TEST_INTERNAL :
+            fprintf(stderr, "internal error\n");
             break;
         }
     }

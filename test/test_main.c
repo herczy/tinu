@@ -46,16 +46,17 @@ segfault(gpointer ctx G_GNUC_UNUSED)
 int
 main(int argc, char *argv[])
 {
+  /* Must be first: see issue #1 */
+  tinu_test_add("signal", "segv", NULL, NULL, segfault);
+  tinu_test_add("signal", "segv2", NULL, NULL, segfault);
+  tinu_test_add("signal", "segv3", NULL, NULL, segfault);
+  tinu_test_add("signal", "segv4", NULL, NULL, segfault);
+
   tinu_test_add("suite", "succeed", NULL, NULL, NULL);
   tinu_test_add("suite", "fail", NULL, NULL, fail);
   tinu_test_add("suite", "full", setup, cleanup, succeed);
 
   tinu_test_add("leak", "leak", NULL, NULL, leak);
-
-  tinu_test_add("signal", "segv", NULL, NULL, segfault);
-  tinu_test_add("signal", "segv2", NULL, NULL, segfault);
-  tinu_test_add("signal", "segv3", NULL, NULL, segfault);
-  tinu_test_add("signal", "segv4", NULL, NULL, segfault);
 
   return tinu_main(&argc, &argv);
 }

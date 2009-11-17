@@ -21,6 +21,7 @@ typedef enum
   TEST_PASSED = 0,
   TEST_FAILED,
   TEST_SEGFAULT,
+  TEST_INTERNAL,
 } TestCaseResult;
 
 struct _TestCase

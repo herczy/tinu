@@ -1,1 +1,4 @@
-* If the first test segfaults, the others cannot be run
+ID: 1
+State: Resolved Fixed
+Description: If the first test segfaults, the others cannot be run
+Resolution: Changed longjmp-s to ucontext_t-s
