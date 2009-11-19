@@ -2,7 +2,6 @@
 .lock-wscript
 .waf*
 conthere.vim
-waf
 _build_
 .old*
 .unused
