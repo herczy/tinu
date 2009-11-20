@@ -4,7 +4,7 @@
 #include <glib/gtypes.h>
 #include <glib/garray.h>
 
-#include <applog.h>
+#include <tinu/log.h>
 
 #define t_new(type, count) \
   (type *)__allocate(sizeof(type) * (count))

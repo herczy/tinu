@@ -4,10 +4,9 @@
 
 #include <glib/gstring.h>
 
-#include <applog.h>
-
 #include <tinu/utils.h>
 #include <tinu/backtrace.h>
+#include <tinu/log.h>
 
 #define MAX_BUF_SIZE      4096
 

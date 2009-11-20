@@ -1,8 +1,7 @@
 #include <stdio.h>
 
-#include <applog.h>
-
 #include <tinu/backtrace.h>
+#include <tinu/log.h>
 
 void
 other_function()

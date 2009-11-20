@@ -1,9 +1,8 @@
 #include <stdlib.h>
 
-#include <applog.h>
-
 #include <tinu/main.h>
 #include <tinu/utils.h>
+#include <tinu/log.h>
 
 gboolean
 setup(gpointer *ctx)

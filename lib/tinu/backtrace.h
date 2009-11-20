@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <applog/log.h>
+#include <tinu/log.h>
 
 typedef struct _BacktraceEntry
 {

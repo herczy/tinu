@@ -6,4 +6,8 @@
 #include <tinu/utils.h>
 #include <tinu/cleanup.h>
 
+/* Applog headers */
+#include <tinu/log.h>
+#include <tinu/message.h>
+
 #endif

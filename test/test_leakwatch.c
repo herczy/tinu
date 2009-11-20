@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <applog.h>
-
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>
+#include <tinu/log.h>
 
 void
 __test_hook(LeakwatchOperation op, gpointer oldptr, gpointer ptr, gsize size, Backtrace *trace, gpointer user_data)

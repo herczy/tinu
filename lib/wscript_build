@@ -1,15 +1,21 @@
-files = 'utils.c cleanup.c test.c backtrace.c leakwatch.c main.c'
+files = 'log.c message.c utils.c cleanup.c test.c backtrace.c leakwatch.c main.c'
 
 task_static = bld.new_task_gen('cc')
 task_static.target = 'static_tinu'
 task_static.source = files
 task_static.includes = '. #'
 task_static.cflags = ['-g']
-task_static.uselib = 'GLIB GTHREAD APPLOG'
+task_static.uselib = 'GLIB GTHREAD'
 
 task = bld.new_task_gen('cc', 'cstaticlib')
 task.target = 'tinu'
 task.add_objects = task_static.target
+task.uselib = 'GLIB GTHREAD'
+task.install_path = '${PREFIX}/lib'
+
+task = bld.new_task_gen('cc', 'cshlib')
+task.target = 'tinu'
+task.add_objects = task_static.target 
 task.uselib = 'GLIB GTHREAD'
 task.install_path = '${PREFIX}/lib'
 

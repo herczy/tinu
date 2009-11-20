@@ -10,7 +10,6 @@
 
 #include <config.h>
 
-#include <applog.h>
 #include <tinu/cleanup.h>
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>

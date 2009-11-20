@@ -2,13 +2,12 @@
 #include <string.h>
 #include <signal.h>
 
-#include <applog.h>
-
 #include <glib/goption.h>
 #include <glib/gutils.h>
 
 #include <tinu/leakwatch.h>
 #include <tinu/main.h>
+#include <tinu/log.h>
 
 #include <config.h>
 
