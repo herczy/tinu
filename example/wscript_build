@@ -1,0 +1,12 @@
+task = bld.new_task_gen('cc', 'cprogram')
+task.target = 'example'
+task.includes = '. # ../lib ../lib'
+task.source = 'example.c'
+task.install_path = '${PREFIX}/share/tinu'
+task.add_objects = 'static_tinu'
+task.uselib = 'GLIB GTHREAD APPLOG'
+
+task.cflags = ['-g']
+task.ldflags = ['-Wl,-E', '-rdynamic']
+
+# vim: syntax=python

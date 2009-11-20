@@ -32,6 +32,7 @@ def git_revision():
 
 def set_options(opt):
   opt.add_option('--context-stack', action='store', type='int', dest='stacksize', default=128)
+  opt.add_option('--build-example', action='store_true', dest='example', default=False)
 
 def configure(conf):
   from Options import options
@@ -59,6 +60,10 @@ def configure(conf):
   conf.check_message_custom('test context stack size', '', "%d kb" % Options.options.stacksize)
   conf.define('TEST_CTX_STACK_SIZE', Options.options.stacksize * 1024)
 
+  conf.env['EXAMPLE'] = options.example
+  if options.example:
+    conf.check_message_custom('building example', '', 'true')
+
   branch, rev = git_revision()
   if branch:
     conf.define('GIT_BRANCH', branch)
@@ -69,10 +74,16 @@ def configure(conf):
   conf.write_config_header('config.h')
 
 def build(bld):
+  from Options import options
   bld.add_subdirs('lib test')
+
+  if bld.env['EXAMPLE']:
+    bld.add_subdirs('example')
 
   bld.install_files('${PREFIX}/include/tinu', 'lib/tinu/*.h')
   bld.install_files('${PREFIX}/include', 'lib/tinu.h')
   bld.install_files('${PREFIX}/include/tinu', blddir + '/default/config.h')
+
+  bld.install_files('${PREFIX}/share/tinu', 'example/example.c')
 
 # vim: syntax=python
