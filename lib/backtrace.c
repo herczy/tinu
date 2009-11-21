@@ -115,6 +115,7 @@ backtrace_create_depth(guint32 depth, guint32 skip)
       log_error("Could not get symbol names",
                 msg_tag_int("depth", depth),
                 msg_tag_int("skip", skip), NULL);
+      return NULL;
     }
 
   res = t_new(Backtrace, 1);
