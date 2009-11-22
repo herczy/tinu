@@ -25,7 +25,7 @@ void log_format(gint priority, const gchar *msg, MessageTag *tag0, ...);
 void log_vformat(gint priority, const gchar *msg, MessageTag *tag0, va_list vl);
 
 void log_init();
-void log_done();
+void log_clear();
 
 /* Messages will be send to given handler. Cannot be reinitialized after this */
 void log_divert(MessageHandler handler, gpointer user_data);
