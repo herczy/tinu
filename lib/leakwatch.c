@@ -10,13 +10,12 @@
 
 #include <config.h>
 
-#include <tinu/cleanup.h>
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>
 
 static GSList *g_leakwatch_list = NULL;
 static gint g_leakwatch_count = 0;
-static gpointer g_leakwatch_cleanup_handle = NULL;
+static gboolean g_leakwatch_init = FALSE;
 
 static void *(*g_leakwatch_malloc)(size_t, const void *) = NULL;
 static void *(*g_leakwatch_realloc)(void *, size_t, const void *) = NULL;
@@ -215,8 +214,8 @@ _tinu_leakwatch_enable()
   g_leakwatch_count++;
 }
 
-static inline void
-_tinu_leakwatch_clear(gpointer user_data G_GNUC_UNUSED)
+static void
+_tinu_leakwatch_clear()
 {
   __malloc_hook = g_leakwatch_malloc;
   __realloc_hook = g_leakwatch_realloc;
@@ -244,8 +243,11 @@ tinu_register_watch(AllocCallback callback, gpointer user_data)
 {
   struct _Leakwatch *lw;
 
-  if (!g_leakwatch_cleanup_handle)
-    g_leakwatch_cleanup_handle = tinu_atexit(_tinu_leakwatch_clear, NULL);
+  if (!g_leakwatch_init)
+    {
+      atexit(_tinu_leakwatch_clear);
+      g_leakwatch_init = TRUE;
+    }
 
   _tinu_leakwatch_enable();
   _hook_pause();
@@ -266,6 +268,12 @@ tinu_unregister_watch(gpointer handle)
   GSList *act;
   struct _Leakwatch *lw;
   gboolean res = FALSE;
+
+  if (!g_leakwatch_init)
+    {
+      log_emerg("Leakwatch subsystem uninitialized", NULL);
+      return FALSE;
+    }
 
   _hook_pause();
 

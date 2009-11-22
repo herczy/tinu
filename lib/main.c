@@ -322,12 +322,6 @@ _tinu_show_results()
     }
 }
 
-void
-_tinu_log_clear(gpointer user_data G_GNUC_UNUSED)
-{
-  log_clear();
-}
-
 int
 tinu_main(int *argc, char **argv[])
 {
@@ -344,7 +338,7 @@ tinu_main(int *argc, char **argv[])
   if (g_opt_version)
     _tinu_version();
 
-  tinu_atexit(_tinu_log_clear);
+  atexit(log_clear);
 
   if (!g_opt_silent)
     {
