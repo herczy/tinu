@@ -28,7 +28,6 @@ Backtrace *backtrace_reference(Backtrace *self);
 void backtrace_unreference(Backtrace *self);
 
 guint32 backtrace_depth(const Backtrace *self);
-const gchar *backtrace_line(const Backtrace *self, guint32 line);
 
 void backtrace_dump_log(const Backtrace *self, const gchar *msg_prefix, gint priority);
 void backtrace_dump_file(const Backtrace *self, FILE *output, guint8 indent);

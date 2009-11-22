@@ -5,18 +5,18 @@ task_static.target = 'static_tinu'
 task_static.source = files
 task_static.includes = '. #'
 task_static.cflags = ['-g']
-task_static.uselib = 'GLIB GTHREAD'
+task_static.uselib = 'GLIB GTHREAD DL'
 
 task = bld.new_task_gen('cc', 'cstaticlib')
 task.target = 'tinu'
 task.add_objects = task_static.target
-task.uselib = 'GLIB GTHREAD'
+task.uselib = 'GLIB GTHREAD DL'
 task.install_path = '${PREFIX}/lib'
 
 task = bld.new_task_gen('cc', 'cshlib')
 task.target = 'tinu'
 task.add_objects = task_static.target 
-task.uselib = 'GLIB GTHREAD'
+task.uselib = 'GLIB GTHREAD DL'
 task.install_path = '${PREFIX}/lib'
 
 task = bld.new_task_gen('subst')

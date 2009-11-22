@@ -1,21 +1,26 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <execinfo.h>
 
 #include <glib/gstring.h>
+#include <glib/gstrfuncs.h>
+#include <glib/gmem.h>
 
 #include <tinu/utils.h>
 #include <tinu/backtrace.h>
 #include <tinu/log.h>
 
+#include <dlfcn.h>
+
 #define MAX_BUF_SIZE      4096
 
 struct _Backtrace
 {
-  gint        m_refcnt;
+  gint                    m_refcnt;
 
   guint32                 m_length;
-  gchar                 **m_names;
+  gpointer               *m_symbols;
 };
 
 struct _DumpLogUserData
@@ -23,6 +28,27 @@ struct _DumpLogUserData
   gint                     m_priority;
   const gchar             *m_prefix;
 };
+
+static BacktraceEntry *
+_backtrace_resolve_info(const gpointer addr)
+{
+  Dl_info info;
+  BacktraceEntry *res = NULL;
+
+  if (!addr)
+    return NULL;
+
+  if (dladdr(addr, &info) != 0);
+    {
+      res = g_new0(BacktraceEntry, 1);
+
+      res->m_ptr = addr;
+      res->m_offset = addr - info.dli_saddr;
+      res->m_function = g_strdup(info.dli_sname);
+      res->m_file = g_strdup(info.dli_fname);
+    }
+  return res;
+}
 
 static void
 _backtrace_dump_log_callback(const BacktraceEntry *entry, gpointer user_data)
@@ -76,7 +102,6 @@ Backtrace *
 backtrace_create_depth(guint32 depth, guint32 skip)
 {
   gpointer buffer[MAX_DEPTH + 1];
-  gchar **list;
   guint32 nptr, i;
   Backtrace *res;
 
@@ -105,30 +130,16 @@ backtrace_create_depth(guint32 depth, guint32 skip)
 
       res->m_refcnt = 1;
       res->m_length = 0;
-      res->m_names = NULL;
+      res->m_symbols = NULL;
       return res;
-    }
-
-  list = backtrace_symbols(buffer + skip, nptr - skip);
-  if (!list)
-    {
-      log_error("Could not get symbol names",
-                msg_tag_int("depth", depth),
-                msg_tag_int("skip", skip), NULL);
-      return NULL;
     }
 
   res = t_new(Backtrace, 1);
   res->m_refcnt = 1;
   res->m_length = nptr - skip;
-  res->m_names = t_new(gchar *, res->m_length);
+  res->m_symbols = g_new0(gpointer, nptr - skip);
+  memcpy(res->m_symbols, buffer + skip, (nptr - skip) * sizeof(gpointer));
 
-  for (i = 0; i < nptr - skip; i++)
-    {
-      res->m_names[i] = strdup(list[i]);
-    }
-
-  t_free(list);
   return res;
 }
 
@@ -151,11 +162,7 @@ backtrace_unreference(Backtrace *self)
 
   if (self->m_refcnt == 0)
     {
-      for (i = 0; i < self->m_length; i++)
-        {
-          t_free(self->m_names[i]);
-        }
-      t_free(self->m_names);
+      t_free(self->m_symbols);
       t_free(self);
     }
 }
@@ -164,12 +171,6 @@ guint32
 backtrace_depth(const Backtrace *self)
 {
   return self->m_length;
-}
-
-const gchar *
-backtrace_line(const Backtrace *self, guint32 line)
-{
-  return self->m_names[line];
 }
 
 void
@@ -189,20 +190,24 @@ backtrace_dump_file(const Backtrace *self, FILE *output, guint8 indent)
 void
 backtrace_dump(const Backtrace *self, DumpCallback callback, void *user_data)
 {
-  BacktraceEntry entry;
+  BacktraceEntry *entry;
   guint32 i;
 
   for (i = 0; i < self->m_length; i++)
     {
-      if (!backtrace_entry_parse(&entry, self->m_names[i]))
-        callback(BACKTRACE_ENTRY_INVALID, user_data);
+      if (NULL != (entry = _backtrace_resolve_info(self->m_symbols[i])))
+        {
+          callback(entry, user_data);
+          backtrace_entry_destroy(entry);
+          t_free(entry);
+        }
       else
-        callback(&entry, user_data);
+        callback(BACKTRACE_ENTRY_INVALID, user_data);
 
-      backtrace_entry_destroy(&entry);
     }
 }
 
+#if 0
 gint
 backtrace_entry_parse(BacktraceEntry *self, const gchar *line)
 {
@@ -289,6 +294,7 @@ backtrace_entry_parse(BacktraceEntry *self, const gchar *line)
   self->m_function = strndup(line + start + 1, plus - start - 1);
   return 1;
 }
+#endif
 
 void
 backtrace_entry_destroy(BacktraceEntry *self)
@@ -302,20 +308,21 @@ msg_tag_trace(const gchar *tag, const Backtrace *trace)
 {
   MessageTag *res = t_new(MessageTag, 1);
   GString *str = g_string_new("");
-  BacktraceEntry entry;
+  BacktraceEntry *entry;
   guint32 i;
 
   for (i = 0; i < trace->m_length; i++)
     {
-      if (!backtrace_entry_parse(&entry, trace->m_names[i]) || !entry.m_function)
+      if ((NULL != (entry = _backtrace_resolve_info(trace->m_symbols[i]))) && entry->m_function)
         {
-          g_string_append(str, "???, ");
+          g_string_append(str, entry->m_function);
+          g_string_append(str, ", ");
+
+          backtrace_entry_destroy(entry);
+          t_free(entry);
         }
       else
-        {
-          g_string_append(str, entry.m_function);
-          g_string_append(str, ", ");
-        }
+        g_string_append(str, "???, ");
     }
 
   res->m_tag = strdup(tag);

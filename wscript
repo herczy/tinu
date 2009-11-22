@@ -42,6 +42,7 @@ def configure(conf):
   conf.check_tool('misc')
 
   conf.check_cfg(package='glib-2.0', args='--libs --cflags', uselib_store='GLIB', mandatory=True)
+  conf.check(lib='dl', mandatory=True)
 
   conf.env['PREFIX'] = options.prefix
   conf.env['APPNAME'] = APPNAME
