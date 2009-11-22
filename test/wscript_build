@@ -5,7 +5,7 @@ def add_test(bld, name):
   task.source = 'test_%s.c' % name
   task.install_path = None
   task.add_objects = 'static_tinu'
-  task.uselib = 'GLIB GTHREAD APPLOG'
+  task.uselib = 'GLIB GTHREAD'
 
   task.cflags = ['-g']
   task.ldflags = ['-Wl,-E', '-rdynamic']
