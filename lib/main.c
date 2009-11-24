@@ -112,7 +112,7 @@ _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
 
 static GOptionEntry g_main_opt_entries[] = {
   { "fancy-log", 'c', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_fancy,
-    "Colourfull logging to stderr", NULL },
+    "Colourful logging to stderr", NULL },
   { "silent", 's', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_silent,
     "Do not log to stderr", NULL },
   { "syslog", 'S', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_syslog,
@@ -126,7 +126,7 @@ static GOptionEntry g_main_opt_entries[] = {
     "Set statistics verbosity (none, summary (default), suites, full, verbose)",
     "verbosity" },
   { "leakwatch", 0, 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_leakwatch,
-    "Enable leakwatcher (warning: slows tests down by a significant ammount of time)", NULL },
+    "Enable leak watcher (warning: slows tests down by a significant ammount of time)", NULL },
   { "no-sighandle", 0, G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, 
     (gpointer)&g_opt_sighandle,
     "Don't handle signals from test", NULL },
