@@ -33,7 +33,7 @@ void backtrace_dump_log(const Backtrace *self, const gchar *msg_prefix, gint pri
 void backtrace_dump_file(const Backtrace *self, FILE *output, guint8 indent);
 void backtrace_dump(const Backtrace *self, DumpCallback callback, gpointer user_data);
 
-gboolean backtrace_entry_parse(BacktraceEntry *self, const gchar *line);
+gboolean backtrace_resolv_lines(const BacktraceEntry *entry, const gchar **src, guint32 *line);
 void backtrace_entry_destroy(BacktraceEntry *self);
 
 MessageTag *msg_tag_trace(const gchar *tag, const Backtrace *trace);

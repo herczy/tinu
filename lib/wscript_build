@@ -1,22 +1,25 @@
 files = 'log.c message.c utils.c test.c backtrace.c leakwatch.c main.c'
 
+if bld.env['HAVE_DWARF']:
+  files += ' dwarf.c'
+
 task_static = bld.new_task_gen('cc')
 task_static.target = 'static_tinu'
 task_static.source = files
 task_static.includes = '. #'
 task_static.cflags = ['-g']
-task_static.uselib = 'GLIB GTHREAD DL'
+task_static.uselib = 'GLIB GTHREAD DL DWARF'
 
 task = bld.new_task_gen('cc', 'cstaticlib')
 task.target = 'tinu'
 task.add_objects = task_static.target
-task.uselib = 'GLIB GTHREAD DL'
+task.uselib = 'GLIB GTHREAD DL DWARF'
 task.install_path = '${PREFIX}/lib'
 
 task = bld.new_task_gen('cc', 'cshlib')
 task.target = 'tinu'
 task.add_objects = task_static.target 
-task.uselib = 'GLIB GTHREAD DL'
+task.uselib = 'GLIB GTHREAD DL DWARF'
 task.install_path = '${PREFIX}/lib'
 
 task = bld.new_task_gen('subst')
@@ -27,8 +30,12 @@ task.dict = {
   "PREFIX" : bld.env["PREFIX"],
   "VERSION" : bld.env['VERSION'],
   "CXXFLAGS" : "-I" + bld.env['PREFIX'] + '/include',
-  "LDFLAGS" : "-ltinu"
 }
+
+task.dict["LDFLAGS"] = "-ltinu -ldl"
+
+if bld.env['HAVE_DWARF']:
+  task.dict['LDFLAGS'] += ' -ldwarf -lelf'
 
 # vim: syntax=python
 

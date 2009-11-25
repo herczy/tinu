@@ -39,6 +39,9 @@ static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 static const gchar *g_opt_suite = NULL;
 static const gchar *g_opt_file = NULL;
 
+/* Runtime name */
+const gchar *g_runtime_name = NULL;
+
 /* Error handling */
 static inline GQuark
 log_error_main()
@@ -329,6 +332,8 @@ tinu_main(int *argc, char **argv[])
   gpointer handle = NULL;
   gboolean res;
   gchar *basename = g_path_get_basename(**argv);
+
+  g_runtime_name = (*argv)[0];
 
   signal(SIGSEGV, _tinu_signal_handler);
 

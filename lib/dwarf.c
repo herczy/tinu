@@ -1,0 +1,223 @@
+#define _LARGEFILE64_SOURCE
+#include <libelf.h>
+#include <libdwarf.h>
+
+#include <glib/gstrfuncs.h>
+
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <tinu/dwarf.h>
+#include <tinu/log.h>
+
+#define DWARF_ADDR_TO_GPOINTER(addr) ((gpointer)((int)(addr)))
+
+static inline void
+_dw_dwarf_error(Dwarf_Error error, Dwarf_Ptr user_data G_GNUC_UNUSED)
+{
+  log_error("DWARF error found", msg_tag_str("error", dwarf_errmsg(error)), NULL);
+}
+
+static void
+_dw_clean_unit(gpointer entry, gpointer data G_GNUC_UNUSED)
+{
+  g_free(entry);
+}
+
+static void
+_dw_clean_handle(gpointer unit, gpointer data G_GNUC_UNUSED)
+{
+  DwarfCompUnit *udata = (DwarfCompUnit *)unit;
+
+  g_slist_foreach(udata->m_entries, _dw_clean_unit, NULL);
+  g_slist_free(udata->m_entries);
+  g_free(unit);
+}
+
+DwarfHandle *
+dw_new(const gchar *name)
+{
+  DwarfHandle *res = g_new0(DwarfHandle, 1);
+  int ret;
+  Dwarf_Error error = NULL;
+  gint i;
+
+  int fd;
+  Dwarf_Debug dbg = NULL;
+  Dwarf_Die die = NULL;
+  Dwarf_Unsigned next_cu_header = 0;
+
+  Dwarf_Signed lines;
+  Dwarf_Line *linebuf = NULL;
+
+  DwarfCompUnit *unit;
+  Dwarf_Addr low, high;
+  GSList *last_unit = NULL;
+
+  DwarfEntry *entry;
+  gchar *filename;
+  Dwarf_Addr lineaddr;
+  Dwarf_Unsigned lineno;
+  GSList *last_entry;
+
+  res->m_filename = g_strdup(name);
+  res->m_entries = NULL;
+
+  log_info("Loading trace info", msg_tag_str("filename", name), NULL);
+
+  fd = open(name, O_RDONLY);
+  if (fd == -1)
+    {
+      log_error("Cannot open runtime file", msg_tag_str("filename", name), NULL);
+      goto error;
+    }
+
+  if (dwarf_init(fd, DW_DLC_READ, _dw_dwarf_error, NULL, &dbg, &error)
+        != DW_DLV_OK)
+    {
+      if (error)
+        goto error;
+
+      log_warn("File does not contain entries", NULL);
+      close(fd);
+      dwarf_finish(dbg, NULL);
+      return res;
+    }
+
+  while (DW_DLV_OK == (ret = dwarf_next_cu_header(dbg, NULL, NULL, NULL, NULL,
+                                                  &next_cu_header, &error)))
+    {
+      if (dwarf_siblingof(dbg, NULL, &die, &error) == DW_DLV_OK)
+        {
+          ret = dwarf_srclines(die, &linebuf, &lines, &error);
+
+          if (ret == DW_DLV_NO_ENTRY)
+            continue;
+
+          if (ret == DW_DLV_ERROR)
+            goto error;
+
+          ret = dwarf_lowpc(die, &low, &error);
+          if (ret == DW_DLV_ERROR)
+            goto error;
+          else if (ret == DW_DLV_NO_ENTRY)
+            continue;
+
+          ret = dwarf_highpc(die, &high, &error);
+          if (ret == DW_DLV_ERROR)
+            goto error;
+          else if (ret == DW_DLV_NO_ENTRY)
+            continue;
+
+          unit = g_new0(DwarfCompUnit, 1);
+          unit->m_entries = NULL;
+          unit->m_lowpc = DWARF_ADDR_TO_GPOINTER(low);
+          unit->m_highpc = DWARF_ADDR_TO_GPOINTER(high);
+
+          if (G_LIKELY(last_unit))
+            {
+              last_unit->next = g_slist_append(NULL, unit);
+              last_unit = last_unit->next;
+            }
+          else
+            {
+              res->m_entries = g_slist_append(NULL, unit);
+              last_unit = res->m_entries;
+            }
+
+          for (i = 0, last_entry = NULL; i < lines; i++)
+            {
+              if (dwarf_linesrc(linebuf[i], &filename, &error) != DW_DLV_OK)
+                goto error;
+
+              if (dwarf_lineaddr(linebuf[i], &lineaddr, &error) != DW_DLV_OK)
+                goto error;
+
+              if (dwarf_lineno(linebuf[i], &lineno, &error) != DW_DLV_OK)
+                goto error;
+
+              entry = g_new0(DwarfEntry, 1);
+
+              entry->m_source = g_quark_from_string(filename);
+              entry->m_pointer = DWARF_ADDR_TO_GPOINTER(lineaddr);
+              entry->m_lineno = (gint)lineno;
+
+              if (G_LIKELY(last_entry))
+                {
+                  last_entry->next = g_slist_append(NULL, entry);
+                  last_entry = last_entry->next;
+                }
+              else
+                {
+                  unit->m_entries = g_slist_append(NULL, entry);
+                  last_entry = unit->m_entries;
+                }
+            }
+
+          dwarf_srclines_dealloc(dbg, linebuf, lines);
+          dwarf_dealloc(dbg, die, DW_DLA_DIE);
+        }
+      else
+        goto error;
+    }
+
+  if (ret == DW_DLV_ERROR)
+    goto error;
+
+  log_info("DWARF init successfull", NULL);
+
+  close(fd);
+  dwarf_finish(dbg, NULL);
+  return res;
+
+error:
+  close(fd);
+  if (error)
+    {
+      log_error("DWARF error", msg_tag_str("error", dwarf_errmsg(error)), NULL);
+      dwarf_dealloc(NULL, error, DW_DLA_ERROR);
+    }
+  if (dbg)
+    dwarf_finish(dbg, NULL);
+
+  dw_destroy(res);
+  return NULL;
+}
+
+void
+dw_destroy(DwarfHandle *self)
+{
+  g_slist_foreach(self->m_entries, _dw_clean_handle, NULL);
+  g_free(self->m_filename);
+  g_free(self);
+}
+
+const DwarfEntry *
+dw_lookup(DwarfHandle *self, gpointer ptr, guint32 tolerance)
+{
+  GSList *act;
+
+  DwarfCompUnit *unit;
+  DwarfEntry *entry;
+
+  /* Find compilation unit */
+  for (act = self->m_entries; act; act = act->next)
+    {
+      unit = (DwarfCompUnit *)act->data;
+      if ((ptr >= unit->m_lowpc) && (ptr <= unit->m_highpc))
+        break;
+    }
+
+  if (!act)
+    return NULL;
+
+  /* Find the nearest line number */
+  for (act = unit->m_entries; act; act = act->next)
+    {
+      entry = (DwarfEntry *)act->data;
+      if (ptr < entry->m_pointer)
+        break;
+    }
+
+  return entry;
+}

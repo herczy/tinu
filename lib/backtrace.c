@@ -3,6 +3,8 @@
 #include <string.h>
 #include <execinfo.h>
 
+#include <dlfcn.h>
+
 #include <glib/gstring.h>
 #include <glib/gstrfuncs.h>
 #include <glib/gmem.h>
@@ -11,7 +13,47 @@
 #include <tinu/backtrace.h>
 #include <tinu/log.h>
 
-#include <dlfcn.h>
+#include <config.h>
+
+#if HAVE_DWARF == 1
+#include <tinu/dwarf.h>
+
+static gboolean g_backtrace_init = FALSE;
+static DwarfHandle *g_backtrace_dwarf;
+
+extern const gchar *g_runtime_name;
+
+static void
+_backtrace_cleanup()
+{
+  dw_destroy(g_backtrace_dwarf);
+}
+
+static inline void
+_backtrace_init()
+{
+  if (!g_backtrace_init)
+    {
+      g_backtrace_init = TRUE;
+      g_backtrace_dwarf = dw_new(g_runtime_name);
+    }
+}
+
+static inline gboolean
+_backtrace_get_lineinfo(const BacktraceEntry *entry, const gchar **file, guint32 *lineno)
+{
+  const DwarfEntry *dw_entry = dw_lookup(g_backtrace_dwarf, entry->m_ptr, 0x30);
+
+  if (!dw_entry)
+    return FALSE;
+
+  *file = g_quark_to_string(dw_entry->m_source);
+  *lineno = dw_entry->m_lineno;
+  return TRUE;
+}
+#else
+#define _backtrace_init()
+#endif
 
 #define MAX_BUF_SIZE      4096
 
@@ -54,6 +96,8 @@ static void
 _backtrace_dump_log_callback(const BacktraceEntry *entry, gpointer user_data)
 {
   struct _DumpLogUserData *self = (struct _DumpLogUserData *)user_data;
+  const gchar *src = NULL;
+  guint32 line = 0;
 
   if (entry == BACKTRACE_ENTRY_INVALID)
     {
@@ -62,11 +106,14 @@ _backtrace_dump_log_callback(const BacktraceEntry *entry, gpointer user_data)
       return;
     }
 
+  backtrace_resolv_lines(entry, &src, &line);
+
   log_format(self->m_priority, self->m_prefix,
             msg_tag_str("function", entry->m_function),
             msg_tag_str("file", entry->m_file),
             msg_tag_hex("offset", entry->m_offset),
-            msg_tag_ptr("ptr", entry->m_ptr), NULL);
+            msg_tag_ptr("ptr", entry->m_ptr),
+            msg_tag_printf("location", "%s:%d", src, line), NULL);
 }
 
 struct _DumpFileUserData
@@ -80,6 +127,9 @@ _backtrace_dump_file_callback(const BacktraceEntry *entry, gpointer user_data)
 {
   struct _DumpFileUserData *self = (struct _DumpFileUserData *)user_data;
 
+  const gchar *src = NULL;
+  guint32 line = 0;
+
   if (entry == BACKTRACE_ENTRY_INVALID)
     {
       fprintf(self->m_file, "%*c<invalid frame>\n", self->m_indent, ' ');
@@ -90,6 +140,9 @@ _backtrace_dump_file_callback(const BacktraceEntry *entry, gpointer user_data)
     fprintf(self->m_file, "%*c%s\n", self->m_indent, ' ', entry->m_function);
   else
     fprintf(self->m_file, "%*c<file: %s>\n", self->m_indent, ' ', entry->m_file);
+
+  if (backtrace_resolv_lines(entry, &src, &line))
+    fprintf(self->m_file, "\tlocation: %s:%d\n", src, line);
 }
 
 Backtrace *
@@ -104,6 +157,8 @@ backtrace_create_depth(guint32 depth, guint32 skip)
   gpointer buffer[MAX_DEPTH + 1];
   guint32 nptr, i;
   Backtrace *res;
+
+  _backtrace_init();
 
   if (depth > MAX_DEPTH)
     {
@@ -207,94 +262,15 @@ backtrace_dump(const Backtrace *self, DumpCallback callback, void *user_data)
     }
 }
 
-#if 0
-gint
-backtrace_entry_parse(BacktraceEntry *self, const gchar *line)
+gboolean
+backtrace_resolv_lines(const BacktraceEntry *entry, const gchar **src, guint32 *line)
 {
-  gchar *endp;
-  gchar *pos;
-  gint len = strlen(line);
-  gint i = 0;
-
-  gint start = 0, end = 0, plus = 0;
-
-  gchar *tmp;
-
-  memset(self, 0, sizeof(BacktraceEntry));
-
-  /* Find offset (at the end) */
-  for (i = len - 1; i >= 0 && (!start || !end); i--)
-    {
-      if (line[i] == ']')
-        end = i;
-      else if (line[i] == '[')
-        start = i;
-    }
-
-  if (i >= 0)
-    {
-      self->m_ptr = (gpointer)strtoul(line + start + 3, &endp, 16);
-
-      if (*endp != ']')
-        {
-          log_warn("Can not convert pointer in line",
-                   msg_tag_str("line", line), NULL);
-          self->m_ptr = NULL;
-        }
-      len = start;
-    }
-
-  for (start = end = 0, i = len - 1; i >= 0 && (!start || !end); i--)
-    {
-      if (line[i] == ')')
-        end = i;
-      else if (line[i] == '(')
-        start = i;
-      else if (line[i] == '+')
-        plus = i;
-    }
-
-  if (i < 0)
-    {
-      for (; len >= 0 && isspace(line[len]); len--)
-        ;
-
-      if (len < 0)
-        {
-          log_error("Could not convert line at all",
-                    msg_tag_str("line", line), NULL);
-          return 0;
-        }
-      self->m_file = strndup(line, len - 1);
-      return 1;
-    }
-
-  if (plus)
-    {
-      if (line[plus + 3] == '0' && line[plus + 4] == ')')
-        {
-          self->m_offset = 0;
-        }
-      else
-        {
-          self->m_offset = strtoul(line + plus + 3, &endp, 16);
-
-          if (*endp != ')')
-            {
-              log_warn("Can not convert offset in line",
-                       msg_tag_str("line", line), NULL);
-              self->m_offset = 0;
-            }
-        }
-    }
-  else
-    plus = end;
-
-  self->m_file = strndup(line, start);
-  self->m_function = strndup(line + start + 1, plus - start - 1);
-  return 1;
-}
+#if HAVE_DWARF == 1
+  return _backtrace_get_lineinfo(entry, src, line);
+#else
+  return FALSE;
 #endif
+}
 
 void
 backtrace_entry_destroy(BacktraceEntry *self)

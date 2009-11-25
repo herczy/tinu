@@ -33,6 +33,7 @@ def git_revision():
 def set_options(opt):
   opt.add_option('--context-stack', action='store', type='int', dest='stacksize', default=128)
   opt.add_option('--build-example', action='store_true', dest='example', default=False)
+  opt.add_option('--disable-dwarf', action='store_true', dest='nodwarf', default=False)
 
 def configure(conf):
   from Options import options
@@ -43,6 +44,17 @@ def configure(conf):
 
   conf.check_cfg(package='glib-2.0', args='--libs --cflags', uselib_store='GLIB', mandatory=True)
   conf.check(lib='dl', mandatory=True)
+
+  if not options.nodwarf:
+    dwarf = conf.check(lib='dwarf')
+    if dwarf:
+      conf.check(lib='elf', mandatory=True)
+
+    conf.env['HAVE_DWARF'] = dwarf;
+    conf.define('HAVE_DWARF', int(dwarf))
+  else:
+    conf.env['HAVE_DWARF'] = False;
+    conf.define('HAVE_DWARF', 0)
 
   conf.env['PREFIX'] = options.prefix
   conf.env['APPNAME'] = APPNAME
