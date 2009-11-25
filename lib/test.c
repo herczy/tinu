@@ -32,9 +32,11 @@ typedef struct _LeakInfo
 void
 _signal_handler(int signo)
 {
+  Backtrace *trace = backtrace_create(3);
   log_error("Signal received while running a test",
-            msg_tag_int("signal", signo),
-            msg_tag_trace_current("trace", 3), NULL);
+            msg_tag_int("signal", signo), NULL);
+  backtrace_dump_log(trace, "    ", LOG_ERR);
+  backtrace_unreference(trace);
 
   g_signal = signo;
   setcontext(g_test_context.uc_link);
