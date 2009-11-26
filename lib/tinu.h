@@ -4,7 +4,6 @@
 #include <tinu/main.h>
 #include <tinu/leakwatch.h>
 #include <tinu/utils.h>
-#include <tinu/cleanup.h>
 
 /* Applog headers */
 #include <tinu/log.h>
