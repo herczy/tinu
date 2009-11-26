@@ -1,7 +1,10 @@
-import os, time
+import os, time, sys
 import tempfile
+import optparse
+import hashlib
 
 from TaskGen import *
+import Options
 
 def rdfile(fn):
   f = open(fn, 'r')
@@ -9,6 +12,22 @@ def rdfile(fn):
   f.close()
 
   return res.strip()
+
+def calcChecksum(filename):
+  sha1 = hashlib.sha1()
+  md5 = hashlib.md5()
+
+  f = file(filename, 'r')
+  while True:
+    data = f.read(4096)
+    if len(data) == 0:
+      break
+
+    sha1.update(data)
+    md5.update(data)
+
+  f.close()
+  return sha1.hexdigest(), md5.hexdigest()
 
 VERSION = '0.1'
 if os.access('VERSION', os.R_OK):
@@ -38,6 +57,13 @@ def set_options(opt):
     help="Build example unittest provided")
   confopt.add_option('--disable-dwarf', action='store_true', dest='nodwarf', default=False,
     help="Disable DWARF support")
+
+  distopt = optparse.OptionGroup(opt.parser, "Distmake options")
+  distopt.add_option('--snapshot', action='store_true', dest='snapshot', default=False,
+    help="Make a snapshot")
+
+  if 'dist' in sys.argv:
+    opt.add_option_group(distopt)
 
   if 'configure' in sys.argv:
     opt.add_option_group(confopt)
@@ -103,5 +129,43 @@ def build(bld):
   bld.install_files('${PREFIX}/include/tinu', blddir + '/default/config.h')
 
   bld.install_files('${PREFIX}/share/tinu', 'example/example.c')
+
+def dist():
+  import Scripting, Utils
+  global VERSION
+  version = VERSION
+  dir = ''
+
+  if Options.options.snapshot:
+    branch, rev = git_revision()
+    if rev:
+      version = version + '+' + branch + '#' + rev
+    else:
+      version = version + time.strftime('+%Y%m%d')
+
+    dir = 'snapshot-' + branch
+  else:
+    dir = 'release'
+
+  if not os.path.exists(dir):
+    os.mkdir(dir)
+  elif not os.path.isdir(dir):
+    raise Exception, dir + ' is not a directory'
+
+  Scripting.g_gz = 'gz'
+  arch_name = Scripting.dist(APPNAME, version)
+
+  sha1, md5 = calcChecksum(arch_name)
+  f = file('%s/%s-%s.md5' % (dir, APPNAME, version), 'w')
+  f.write('%s %s' % (md5, arch_name))
+  f.close()
+
+  f = file('%s/%s-%s.sha1' % (dir, APPNAME, version), 'w')
+  f.write('%s %s' % (sha1, arch_name))
+  f.close()
+
+  os.system('mv %s %s/%s' % (arch_name, dir, arch_name))
+
+  Utils.pprint('GREEN', 'md5: %s; sha1: %s' % (md5, sha1))
 
 # vim: syntax=python
