@@ -31,12 +31,18 @@ def git_revision():
   return branch, rev
 
 def set_options(opt):
-  opt.add_option('--context-stack', action='store', type='int', dest='stacksize', default=128)
-  opt.add_option('--build-example', action='store_true', dest='example', default=False)
-  opt.add_option('--disable-dwarf', action='store_true', dest='nodwarf', default=False)
+  confopt = optparse.OptionGroup(opt.parser, "Configure options")
+  confopt.add_option('--context-stack', action='store', type='int', dest='stacksize', default=128,
+    help="Set allocated stack size for test cases")
+  confopt.add_option('--build-example', action='store_true', dest='example', default=False,
+    help="Build example unittest provided")
+  confopt.add_option('--disable-dwarf', action='store_true', dest='nodwarf', default=False,
+    help="Disable DWARF support")
+
+  if 'configure' in sys.argv:
+    opt.add_option_group(confopt)
 
 def configure(conf):
-  from Options import options
   global VERSION
 
   conf.check_tool('gcc')
@@ -45,7 +51,7 @@ def configure(conf):
   conf.check_cfg(package='glib-2.0', args='--libs --cflags', uselib_store='GLIB', mandatory=True)
   conf.check(lib='dl', mandatory=True)
 
-  if not options.nodwarf:
+  if not Options.options.nodwarf:
     dwarf = conf.check(lib='dwarf')
     if dwarf:
       conf.check(lib='elf', mandatory=True)
@@ -56,7 +62,7 @@ def configure(conf):
     conf.env['HAVE_DWARF'] = False;
     conf.define('HAVE_DWARF', 0)
 
-  conf.env['PREFIX'] = options.prefix
+  conf.env['PREFIX'] = Options.options.prefix
   conf.env['APPNAME'] = APPNAME
 
   conf.env['CXXFLAGS'] += ['-g', '-Wall']
@@ -73,8 +79,8 @@ def configure(conf):
   conf.check_message_custom('test context stack size', '', "%d kb" % Options.options.stacksize)
   conf.define('TEST_CTX_STACK_SIZE', Options.options.stacksize * 1024)
 
-  conf.env['EXAMPLE'] = options.example
-  if options.example:
+  conf.env['EXAMPLE'] = Options.options.example
+  if Options.options.example:
     conf.check_message_custom('building example', '', 'true')
 
   branch, rev = git_revision()
@@ -87,7 +93,6 @@ def configure(conf):
   conf.write_config_header('config.h')
 
 def build(bld):
-  from Options import options
   bld.add_subdirs('lib test')
 
   if bld.env['EXAMPLE']:
