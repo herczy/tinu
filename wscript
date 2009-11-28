@@ -143,9 +143,9 @@ def dist():
     else:
       version = version + time.strftime('+%Y%m%d')
 
-    dir = 'snapshot-' + branch
+    dir = blddir + '/snapshot-' + branch
   else:
-    dir = 'release'
+    dir = blddir + '/release'
 
   if not os.path.exists(dir):
     os.mkdir(dir)
