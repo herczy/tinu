@@ -4,6 +4,7 @@ if bld.env['HAVE_DWARF']:
   files += ' dwarf.c'
 
 task_static = bld.new_task_gen('cc')
+task_static.obj_ext = '.o'
 task_static.target = 'static_tinu'
 task_static.source = files
 task_static.includes = '. #'

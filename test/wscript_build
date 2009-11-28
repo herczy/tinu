@@ -1,5 +1,6 @@
 def add_test(bld, name):
   task = bld.new_task_gen('cc', 'cprogram')
+  task.obj_ext = '.o'
   task.target = 'test_%s' % name
   task.includes = '. # ../lib ../lib/tinu'
   task.source = 'test_%s.c' % name

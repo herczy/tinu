@@ -1,4 +1,5 @@
 task = bld.new_task_gen('cc', 'cprogram')
+task.obj_ext = '.o'
 task.target = 'example'
 task.includes = '. # ../lib ../lib'
 task.source = 'example.c'
