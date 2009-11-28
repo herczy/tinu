@@ -57,6 +57,10 @@ def set_options(opt):
     help="Build example unittest provided")
   confopt.add_option('--disable-dwarf', action='store_true', dest='nodwarf', default=False,
     help="Disable DWARF support")
+  confopt.add_option('--enable-profiling', action='store_true', dest='profiling', default=False,
+    help="Enable profiling info (usable with gprof)")
+  confopt.add_option('--enable-coverage', action='store_true', dest='coverage', default=False,
+    help="Enable coverage info (usable with gcov)")
 
   distopt = optparse.OptionGroup(opt.parser, "Distmake options")
   distopt.add_option('--snapshot', action='store_true', dest='snapshot', default=False,
@@ -93,6 +97,20 @@ def configure(conf):
 
   conf.env['CCFLAGS'] += ['-g', '-Wall']
   conf.env['LINKFLAGS'] += ['-Wl,-E', '-rdynamic']
+
+  if Options.options.profiling:
+    conf.env['CCFLAGS'].append('-pg')
+    conf.env['LINKFLAGS'].append('-pg')
+    conf.check_message_custom('profiling info enabled', '', 'true', color='GREEN')
+  else:
+    conf.check_message_custom('profiling info enabled', '', 'false', color='YELLOW')
+
+  if Options.options.coverage:
+    conf.env['CCFLAGS'].extend(['-fprofile-arcs', '-ftest-coverage'])
+    conf.env['LINKFLAGS'].extend(['-fprofile-arcs', '-ftest-coverage'])
+    conf.check_message_custom('coverage info enabled', '', 'true', color='GREEN')
+  else:
+    conf.check_message_custom('coverage info enabled', '', 'false', color='YELLOW')
 
   conf.check_message_custom('current version', '', VERSION)
 
