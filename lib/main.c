@@ -283,7 +283,6 @@ _tinu_show_results()
   gint i, j;
 
   TestSuite *suite;
-  TestCase *test;
 
   if (g_opt_stat_verb == STAT_VERB_NONE)
     return;

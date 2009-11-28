@@ -162,7 +162,7 @@ Backtrace *
 backtrace_create_depth(guint32 depth, guint32 skip)
 {
   gpointer buffer[MAX_DEPTH + 1];
-  guint32 nptr, i;
+  guint32 nptr;
   Backtrace *res;
 
   _backtrace_init();
@@ -215,8 +215,6 @@ backtrace_reference(Backtrace *self)
 void
 backtrace_unreference(Backtrace *self)
 {
-  guint32 i;
-
   if (!self)
     return;
 

@@ -6,7 +6,6 @@
 void
 other_function()
 {
-  BacktraceEntry entry;
   Backtrace *trace = backtrace_create(1);
 
   backtrace_dump_file(trace, stdout, 4);

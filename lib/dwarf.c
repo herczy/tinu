@@ -129,7 +129,6 @@ dw_new(const gchar *name)
   DwarfHandle *res = g_new0(DwarfHandle, 1);
   int ret;
   Dwarf_Error error = NULL;
-  gint i;
 
   int fd;
   Dwarf_Debug dbg = NULL;

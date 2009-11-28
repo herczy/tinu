@@ -81,8 +81,6 @@ _leakwatch_realloc(void *ptr, size_t newsize, const void *caller)
 void
 _leakwatch_free(void *ptr, const void *caller)
 {
-  void *res;
-
   _hook_pause();
 
   _leakwatch_alert(LEAKWATCH_OPERATION_FREE, ptr, NULL, 0);
