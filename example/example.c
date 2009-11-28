@@ -35,6 +35,7 @@ gboolean
 test_leak_2_setup(gpointer *context)
 {
   *context = malloc(1024);
+  return TRUE;
 }
 
 void
