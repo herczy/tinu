@@ -7,9 +7,6 @@ def add_test(bld, name):
   task.add_objects = 'static_tinu'
   task.uselib = 'GLIB GTHREAD DL DWARF ELF'
 
-  task.cflags = ['-g']
-  task.ldflags = ['-Wl,-E', '-rdynamic']
-
 add_test(bld, 'backtrace')
 add_test(bld, 'leakwatch')
 add_test(bld, 'main')

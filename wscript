@@ -91,8 +91,8 @@ def configure(conf):
   conf.env['PREFIX'] = Options.options.prefix
   conf.env['APPNAME'] = APPNAME
 
-  conf.env['CXXFLAGS'] += ['-g', '-Wall']
-  conf.env['LDFLAGS'] += ['-Wl,-E', '-rdynamic']
+  conf.env['CCFLAGS'] += ['-g', '-Wall']
+  conf.env['LINKFLAGS'] += ['-Wl,-E', '-rdynamic']
 
   conf.check_message_custom('current version', '', VERSION)
 

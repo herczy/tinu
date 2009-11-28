@@ -6,5 +6,5 @@ includedir=${prefix}/include
 Name: tinu
 Description: TINU Unittesting Library
 Version: @VERSION@
-Libs: @LDFLAGS@
-Cflags: @CXXFLAGS@
+Libs: @LINKFLAGS@
+Cflags: @CCFLAGS@

@@ -6,7 +6,4 @@ task.install_path = '${PREFIX}/share/tinu'
 task.add_objects = 'static_tinu'
 task.uselib = 'GLIB GTHREAD DL ELF DWARF'
 
-task.cflags = ['-g']
-task.ldflags = ['-Wl,-E', '-rdynamic']
-
 # vim: syntax=python

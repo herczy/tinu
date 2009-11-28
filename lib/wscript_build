@@ -7,7 +7,6 @@ task_static = bld.new_task_gen('cc')
 task_static.target = 'static_tinu'
 task_static.source = files
 task_static.includes = '. #'
-task_static.cflags = ['-g']
 task_static.uselib = 'GLIB GTHREAD DL DWARF'
 
 task = bld.new_task_gen('cc', 'cstaticlib')
@@ -29,13 +28,16 @@ task.install_path = '${PREFIX}/lib/pkgconfig'
 task.dict = {
   "PREFIX" : bld.env["PREFIX"],
   "VERSION" : bld.env['VERSION'],
-  "CXXFLAGS" : "-I" + bld.env['PREFIX'] + '/include',
+  "CCFLAGS" : "-I" + bld.env['PREFIX'] + '/include',
 }
 
-task.dict["LDFLAGS"] = "-ltinu -ldl"
+task.dict["LINKFLAGS"] = "-ltinu -ldl"
 
 if bld.env['HAVE_DWARF']:
-  task.dict['LDFLAGS'] += ' -ldwarf -lelf'
+  task.dict['LINKFLAGS'] += ' -ldwarf -lelf'
+
+task.dict["CCFLAGS"] += " " + " ".join(bld.env['CCFLAGS'])
+task.dict["LINKFLAGS"] += " " + " ".join(bld.env['LINKFLAGS'])
 
 # vim: syntax=python
 
