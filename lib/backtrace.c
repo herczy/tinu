@@ -36,6 +36,8 @@ _backtrace_init()
     {
       g_backtrace_init = TRUE;
       g_backtrace_dwarf = dw_new(g_runtime_name);
+
+      atexit(_backtrace_cleanup);
     }
 }
 
