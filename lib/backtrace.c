@@ -42,7 +42,12 @@ _backtrace_init()
 static inline gboolean
 _backtrace_get_lineinfo(const BacktraceEntry *entry, const gchar **file, guint32 *lineno)
 {
-  const DwarfEntry *dw_entry = dw_lookup(g_backtrace_dwarf, entry->m_ptr, 0x30);
+  const DwarfEntry *dw_entry;
+
+  if (!g_backtrace_dwarf)
+    return FALSE;
+
+  dw_entry = dw_lookup(g_backtrace_dwarf, entry->m_ptr, 0x30);
 
   if (!dw_entry)
     return FALSE;
