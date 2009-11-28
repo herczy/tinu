@@ -34,6 +34,95 @@ _dw_clean_handle(gpointer unit, gpointer data G_GNUC_UNUSED)
   g_free(unit);
 }
 
+static inline gboolean
+_dw_process_unit(DwarfCompUnit **res_unit, Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Error *error)
+{
+  gboolean result = FALSE;
+  int ret;
+  gint i;
+
+  Dwarf_Signed lines;
+  Dwarf_Line *linebuf = NULL;
+
+  DwarfCompUnit *unit;
+  Dwarf_Addr low, high;
+
+  DwarfEntry *entry;
+  gchar *filename;
+  Dwarf_Addr lineaddr;
+  Dwarf_Unsigned lineno;
+  GSList *last_entry;
+
+  ret = dwarf_srclines(die, &linebuf, &lines, error);
+
+  if (ret == DW_DLV_NO_ENTRY)
+    return TRUE;
+
+  if (ret == DW_DLV_ERROR)
+    goto exit;
+
+  ret = dwarf_lowpc(die, &low, error);
+  if (ret == DW_DLV_ERROR)
+    goto exit;
+  else if (ret == DW_DLV_NO_ENTRY)
+    {
+      result = TRUE;
+      goto exit;
+    }
+
+  ret = dwarf_highpc(die, &high, error);
+  if (ret == DW_DLV_ERROR)
+    goto exit;
+  else if (ret == DW_DLV_NO_ENTRY)
+    {
+      result = TRUE;
+      goto exit;
+    }
+
+  unit = g_new0(DwarfCompUnit, 1);
+  unit->m_entries = NULL;
+  unit->m_lowpc = DWARF_ADDR_TO_GPOINTER(low);
+  unit->m_highpc = DWARF_ADDR_TO_GPOINTER(high);
+
+  for (i = 0, last_entry = NULL; i < lines; i++)
+    {
+      if (dwarf_linesrc(linebuf[i], &filename, error) != DW_DLV_OK)
+        goto exit;
+
+      if (dwarf_lineaddr(linebuf[i], &lineaddr, error) != DW_DLV_OK)
+        goto exit;
+
+      if (dwarf_lineno(linebuf[i], &lineno, error) != DW_DLV_OK)
+        goto exit;
+
+      entry = g_new0(DwarfEntry, 1);
+
+      entry->m_source = g_quark_from_string(filename);
+      entry->m_pointer = DWARF_ADDR_TO_GPOINTER(lineaddr);
+      entry->m_lineno = (gint)lineno;
+
+      if (G_LIKELY(last_entry))
+        {
+          last_entry->next = g_slist_append(NULL, entry);
+          last_entry = last_entry->next;
+        }
+      else
+        {
+          unit->m_entries = g_slist_append(NULL, entry);
+          last_entry = unit->m_entries;
+        }
+    }
+
+  *res_unit = unit;
+  result = TRUE;
+
+exit:
+  dwarf_srclines_dealloc(dbg, linebuf, lines);
+  dwarf_dealloc(dbg, die, DW_DLA_DIE);
+
+  return result;
+}
+
 DwarfHandle *
 dw_new(const gchar *name)
 {
@@ -47,18 +136,9 @@ dw_new(const gchar *name)
   Dwarf_Die die = NULL;
   Dwarf_Unsigned next_cu_header = 0;
 
-  Dwarf_Signed lines;
-  Dwarf_Line *linebuf = NULL;
-
   DwarfCompUnit *unit;
-  Dwarf_Addr low, high;
-  GSList *last_unit = NULL;
 
-  DwarfEntry *entry;
-  gchar *filename;
-  Dwarf_Addr lineaddr;
-  Dwarf_Unsigned lineno;
-  GSList *last_entry;
+  GSList *last_unit = NULL;
 
   res->m_filename = g_strdup(name);
   res->m_entries = NULL;
@@ -87,78 +167,22 @@ dw_new(const gchar *name)
   while (DW_DLV_OK == (ret = dwarf_next_cu_header(dbg, NULL, NULL, NULL, NULL,
                                                   &next_cu_header, &error)))
     {
-      if (dwarf_siblingof(dbg, NULL, &die, &error) == DW_DLV_OK)
+      if (dwarf_siblingof(dbg, NULL, &die, &error) != DW_DLV_OK)
+        goto error;
+
+      if (!_dw_process_unit(&unit, dbg, die, &error))
+        goto error;
+
+      if (G_LIKELY(last_unit))
         {
-          ret = dwarf_srclines(die, &linebuf, &lines, &error);
-
-          if (ret == DW_DLV_NO_ENTRY)
-            continue;
-
-          if (ret == DW_DLV_ERROR)
-            goto error;
-
-          ret = dwarf_lowpc(die, &low, &error);
-          if (ret == DW_DLV_ERROR)
-            goto error;
-          else if (ret == DW_DLV_NO_ENTRY)
-            continue;
-
-          ret = dwarf_highpc(die, &high, &error);
-          if (ret == DW_DLV_ERROR)
-            goto error;
-          else if (ret == DW_DLV_NO_ENTRY)
-            continue;
-
-          unit = g_new0(DwarfCompUnit, 1);
-          unit->m_entries = NULL;
-          unit->m_lowpc = DWARF_ADDR_TO_GPOINTER(low);
-          unit->m_highpc = DWARF_ADDR_TO_GPOINTER(high);
-
-          if (G_LIKELY(last_unit))
-            {
-              last_unit->next = g_slist_append(NULL, unit);
-              last_unit = last_unit->next;
-            }
-          else
-            {
-              res->m_entries = g_slist_append(NULL, unit);
-              last_unit = res->m_entries;
-            }
-
-          for (i = 0, last_entry = NULL; i < lines; i++)
-            {
-              if (dwarf_linesrc(linebuf[i], &filename, &error) != DW_DLV_OK)
-                goto error;
-
-              if (dwarf_lineaddr(linebuf[i], &lineaddr, &error) != DW_DLV_OK)
-                goto error;
-
-              if (dwarf_lineno(linebuf[i], &lineno, &error) != DW_DLV_OK)
-                goto error;
-
-              entry = g_new0(DwarfEntry, 1);
-
-              entry->m_source = g_quark_from_string(filename);
-              entry->m_pointer = DWARF_ADDR_TO_GPOINTER(lineaddr);
-              entry->m_lineno = (gint)lineno;
-
-              if (G_LIKELY(last_entry))
-                {
-                  last_entry->next = g_slist_append(NULL, entry);
-                  last_entry = last_entry->next;
-                }
-              else
-                {
-                  unit->m_entries = g_slist_append(NULL, entry);
-                  last_entry = unit->m_entries;
-                }
-            }
-
-          dwarf_srclines_dealloc(dbg, linebuf, lines);
-          dwarf_dealloc(dbg, die, DW_DLA_DIE);
+          last_unit->next = g_slist_append(NULL, unit);
+          last_unit = last_unit->next;
         }
       else
-        goto error;
+        {
+          res->m_entries = g_slist_append(NULL, unit);
+          last_unit = res->m_entries;
+        }
     }
 
   if (ret == DW_DLV_ERROR)
