@@ -54,6 +54,7 @@ _dw_process_unit(DwarfCompUnit **res_unit, Dwarf_Debug dbg, Dwarf_Die die, Dwarf
   GSList *last_entry;
 
   ret = dwarf_srclines(die, &linebuf, &lines, error);
+  *res_unit = NULL;
 
   if (ret == DW_DLV_NO_ENTRY)
     return TRUE;
@@ -171,6 +172,9 @@ dw_new(const gchar *name)
 
       if (!_dw_process_unit(&unit, dbg, die, &error))
         goto error;
+
+      if (!unit)
+        continue;
 
       if (G_LIKELY(last_unit))
         {
