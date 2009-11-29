@@ -95,7 +95,7 @@ _test_case_run(TestContext *self, TestCase *test)
 }
 
 TestCaseResult
-_test_case_run_sighnd(TestContext *self, TestCase *test)
+_test_case_run_single_test(TestContext *self, TestCase *test)
 {
   TestCaseResult res = TEST_PASSED;
   gpointer log_handler = log_register_message_handler(_test_message_counter,
@@ -108,28 +108,36 @@ _test_case_run_sighnd(TestContext *self, TestCase *test)
 
   ucontext_t main_ctx;
 
-  _signal_on();
-
-  if (getcontext(&g_test_context) == -1)
+  if (self->m_sighandle)
     {
-      log_error("Cannot get main context", msg_tag_errno(), NULL);
-      goto internal_error;
+      _signal_on();
+
+      if (getcontext(&g_test_context) == -1)
+        {
+          log_error("Cannot get main context", msg_tag_errno(), NULL);
+          goto internal_error;
+        }
+
+      g_test_context.uc_stack.ss_sp = stack;
+      g_test_context.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
+      g_test_context.uc_link = &main_ctx;
+      makecontext(&g_test_context, (void (*)())(&_test_case_run_intern), 3, self, test, &res);
+    
+      if (swapcontext(&main_ctx, &g_test_context) == -1)
+        {
+          log_error("Cannot change context", msg_tag_errno(), NULL);
+          goto internal_error;
+        }
+    
+      g_free(stack);
+    
+      _signal_off();
     }
-
-  g_test_context.uc_stack.ss_sp = stack;
-  g_test_context.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
-  g_test_context.uc_link = &main_ctx;
-  makecontext(&g_test_context, (void (*)())(&_test_case_run_intern), 3, self, test, &res);
-
-  if (swapcontext(&main_ctx, &g_test_context) == -1)
+  else
     {
-      log_error("Cannot change context", msg_tag_errno(), NULL);
-      goto internal_error;
+      g_signal = 0;
+      _test_case_run_intern(self, test, &res);
     }
-
-  g_free(stack);
-
-  _signal_off();
 
   if (g_signal == 0)
     {
@@ -195,8 +203,8 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   gboolean res = TRUE;
 
   for (i = 0; i < suite->m_tests->len; i++)
-    res &= TEST_PASSED == (self->m_sighandle ? _test_case_run_sighnd : _test_case_run)
-                          (self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
+    res &= TEST_PASSED ==
+      _test_case_run_single_test(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
 
   log_format(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),
