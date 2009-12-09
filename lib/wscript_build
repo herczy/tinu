@@ -16,13 +16,11 @@ if bld.env['HAVE_COREDUMPER']:
 task = bld.new_task_gen('cc', 'cstaticlib')
 task.target = 'tinu'
 task.add_objects = task_static.target
-task.uselib = 'GLIB GTHREAD DL DWARF'
 task.install_path = '${PREFIX}/lib'
 
 task = bld.new_task_gen('cc', 'cshlib')
 task.target = 'tinu'
 task.add_objects = task_static.target 
-task.uselib = 'GLIB GTHREAD DL DWARF'
 task.install_path = '${PREFIX}/lib'
 
 task = bld.new_task_gen('subst')
