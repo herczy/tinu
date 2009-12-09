@@ -20,6 +20,8 @@ static gint g_signal = 0;
 static sighandler_t g_sigsegv_handler = NULL;
 static sighandler_t g_sigabrt_handler = NULL;
 
+static TestCase *g_test_case_current = NULL;
+
 ucontext_t g_test_context;
 
 typedef struct _LeakInfo
@@ -34,11 +36,14 @@ _signal_handler(int signo)
 {
   Backtrace *trace = backtrace_create(3);
   log_error("Signal received while running a test",
-            msg_tag_int("signal", signo), NULL);
+            msg_tag_int("signal", signo),
+            msg_tag_str("suite", g_test_case_current->m_suite->m_name),
+            msg_tag_str("test", g_test_case_current->m_name), NULL);
   backtrace_dump_log(trace, "    ", LOG_ERR);
   backtrace_unreference(trace);
 
   g_signal = signo;
+
   setcontext(g_test_context.uc_link);
 }
 
@@ -70,6 +75,8 @@ void
 _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
 {
   gpointer ctx = NULL;
+
+  g_test_case_current = test;
 
   if (test->m_setup && !test->m_setup(&ctx))
     {
