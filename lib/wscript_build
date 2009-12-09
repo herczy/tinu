@@ -9,6 +9,9 @@ task_static.target = 'static_tinu'
 task_static.source = files
 task_static.includes = '. #'
 task_static.uselib = 'GLIB GTHREAD DL DWARF'
+if bld.env['HAVE_COREDUMPER']:
+  task_static.add_objects = 'coredumper'
+  task_static.includes += ' ../coredumper'
 
 task = bld.new_task_gen('cc', 'cstaticlib')
 task.target = 'tinu'

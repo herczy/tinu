@@ -63,6 +63,8 @@ struct _TestContext
 
   gboolean        m_sighandle;
   gboolean        m_leakwatch;
+
+  const gchar    *m_core_dir;
 };
 
 void test_context_init(TestContext *self);

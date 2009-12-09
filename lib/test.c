@@ -15,14 +15,19 @@
 typedef void (*sighandler_t)(int);
 #endif
 
+#ifdef HAVE_COREDUMPER
+#include <coredumper.h>
+#endif
+
 static gint g_signal = 0;
 
 static sighandler_t g_sigsegv_handler = NULL;
 static sighandler_t g_sigabrt_handler = NULL;
 
+static TestContext *g_test_context_current = NULL;
 static TestCase *g_test_case_current = NULL;
 
-ucontext_t g_test_context;
+ucontext_t g_test_ucontext;
 
 typedef struct _LeakInfo
 {
@@ -34,7 +39,12 @@ typedef struct _LeakInfo
 void
 _signal_handler(int signo)
 {
-  Backtrace *trace = backtrace_create(3);
+  Backtrace *trace;
+#ifdef HAVE_COREDUMPER
+  WriteCoreDump(core_file_name(g_test_context_current->m_core_dir,
+    g_test_case_current->m_suite->m_name, g_test_case_current->m_name));
+#endif
+  trace = backtrace_create(3);
   log_error("Signal received while running a test",
             msg_tag_int("signal", signo),
             msg_tag_str("suite", g_test_case_current->m_suite->m_name),
@@ -44,7 +54,7 @@ _signal_handler(int signo)
 
   g_signal = signo;
 
-  setcontext(g_test_context.uc_link);
+  setcontext(g_test_ucontext.uc_link);
 }
 
 void
@@ -77,6 +87,7 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
   gpointer ctx = NULL;
 
   g_test_case_current = test;
+  g_test_context_current = self;
 
   if (test->m_setup && !test->m_setup(&ctx))
     {
@@ -119,18 +130,18 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
     {
       _signal_on();
 
-      if (getcontext(&g_test_context) == -1)
+      if (getcontext(&g_test_ucontext) == -1)
         {
           log_error("Cannot get main context", msg_tag_errno(), NULL);
           goto internal_error;
         }
 
-      g_test_context.uc_stack.ss_sp = stack;
-      g_test_context.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
-      g_test_context.uc_link = &main_ctx;
-      makecontext(&g_test_context, (void (*)())(&_test_case_run_intern), 3, self, test, &res);
+      g_test_ucontext.uc_stack.ss_sp = stack;
+      g_test_ucontext.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
+      g_test_ucontext.uc_link = &main_ctx;
+      makecontext(&g_test_ucontext, (void (*)())(&_test_case_run_intern), 3, self, test, &res);
     
-      if (swapcontext(&main_ctx, &g_test_context) == -1)
+      if (swapcontext(&main_ctx, &g_test_ucontext) == -1)
         {
           log_error("Cannot change context", msg_tag_errno(), NULL);
           goto internal_error;

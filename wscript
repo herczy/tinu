@@ -57,6 +57,8 @@ def set_options(opt):
     help="Build example unittest provided")
   confopt.add_option('--disable-dwarf', action='store_true', dest='nodwarf', default=False,
     help="Disable DWARF support")
+  confopt.add_option('--disable-coredumper', action='store_true', dest='nocoredumper', default=False,
+    help="Disable Google coredumper support")
   confopt.add_option('--enable-profiling', action='store_true', dest='profiling', default=False,
     help="Enable profiling info (usable with gprof)")
   confopt.add_option('--enable-coverage', action='store_true', dest='coverage', default=False,
@@ -83,12 +85,13 @@ def configure(conf):
 
   if not Options.options.nodwarf:
     dwarf = conf.check(lib='dwarf')
-    if dwarf:
-      conf.check(lib='elf', mandatory=True)
+    needelf = True
 
     conf.env['HAVE_DWARF'] = dwarf;
     conf.define('HAVE_DWARF', int(dwarf))
   else:
+    needelf = False
+
     conf.env['HAVE_DWARF'] = False;
     conf.define('HAVE_DWARF', 0)
 
@@ -97,6 +100,15 @@ def configure(conf):
 
   conf.env['CCFLAGS'] += ['-g', '-Wall']
   conf.env['LINKFLAGS'] += ['-Wl,-E', '-rdynamic']
+
+  if not Options.options.nocoredumper:
+    needelf = True
+
+    conf.env['HAVE_COREDUMPER'] = True
+    conf.define('HAVE_COREDUMPER', 1)
+
+  if needelf:
+    conf.check(lib='elf', mandatory=True)
 
   if Options.options.profiling:
     conf.env['CCFLAGS'].append('-pg')
@@ -137,6 +149,9 @@ def configure(conf):
   conf.write_config_header('config.h')
 
 def build(bld):
+  if bld.env['HAVE_COREDUMPER']:
+    bld.add_subdirs('coredumper')
+
   bld.add_subdirs('lib test')
 
   if bld.env['EXAMPLE']:

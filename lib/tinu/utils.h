@@ -27,6 +27,8 @@ void     __free(gpointer ptr);
 #define _strdup(str) ((str) ? strdup(str) : NULL)
 gchar *strndup(const gchar *str, gsize n);
 
+gchar *core_file_name(const gchar *dir, const gchar *suite, const gchar *test);
+
 #define t_assert(cond)                                                  \
   if (!(cond))                                                          \
     {                                                                   \
