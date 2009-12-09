@@ -169,6 +169,9 @@ def dist():
   version = VERSION
   dir = ''
 
+  if not os.access(blddir, os.R_OK):
+    os.system('mkdir -p ' + blddir)
+
   if Options.options.snapshot:
     branch, rev = git_revision()
     if rev:
