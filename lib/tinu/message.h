@@ -34,7 +34,7 @@ MessageTag *msg_find_tag(Message *self, const gchar *name);
 
 MessageTag *msg_tag_str(const gchar *tag, const gchar *string);
 MessageTag *msg_tag_int(const gchar *tag, gint value);
-MessageTag *msg_tag_hex(const gchar *tag, gint value);
+MessageTag *msg_tag_hex(const gchar *tag, guint value);
 MessageTag *msg_tag_ptr(const gchar *tag, const void *ptr);
 MessageTag *msg_tag_bool(const gchar *tag, gboolean value);
 MessageTag *msg_tag_errno();

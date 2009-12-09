@@ -190,7 +190,7 @@ msg_tag_int(const gchar *tag, gint value)
   return _msg_generate_tag(tag, "%d", value);
 }
 
-MessageTag *msg_tag_hex(const gchar *tag, gint value)
+MessageTag *msg_tag_hex(const gchar *tag, guint value)
 {
   return _msg_generate_tag(tag, "0x%x", value);
 }
