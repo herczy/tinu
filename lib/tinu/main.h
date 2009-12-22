@@ -28,13 +28,38 @@
 * Author(s): Viktor Hercinger <hercinger.viktor@gmail.com>
 */
 
+/** @file main.h
+ * @brief The main API of TINU
+ *
+ * This file contains the main API for TINU. The functions here should be
+ * used to add test cases (globally) and to start the test.
+ */
 #ifndef _TINU_MAIN_H
 #define _TINU_MAIN_H
 
 #include <tinu/test.h>
 
+/** @brief Main function of the framework
+ * @param argc Pointer to the argument count (as given by main)
+ * @param argv Pointer to the argument list (as given by main)
+ * @return If all the suites run succeed return 0, on error return -1
+ *
+ * This function is the "core" of the framework. This function should be
+ * run and the result of it should be the exit code.
+ */
 int tinu_main(int *argc, char **argv[]);
 
+/** @brief Add a test to the framework
+ * @param suite_name Suite test belongs to
+ * @param test_name Name of the current test
+ * @param setup Setup function (NULL if none)
+ * @param cleanup Cleanup function (NULL if none)
+ * @param func Test function (NULL if none)
+ * @see test_add
+ *
+ * Similar to test_add but there is no test context required. It adds the
+ * tests to the main test context defined in test.c through test_add.
+ */
 void tinu_test_add(const gchar *suite_name,
                    const gchar *test_name,
                    TestSetup setup,

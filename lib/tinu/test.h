@@ -28,6 +28,11 @@
 * Author(s): Viktor Hercinger <hercinger.viktor@gmail.com>
 */
 
+/** @file test.h
+ * @brief Test cases and their internal representations
+ *
+ * This file contains the API for the individual test cases.
+ */
 #ifndef _TINU_TEST_H
 #define _TINU_TEST_H
 
@@ -42,64 +47,155 @@ typedef struct _TestCase TestCase;
 typedef struct _TestSuite TestSuite;
 typedef struct _TestContext TestContext;
 
+/** @brief Setup function
+ * The result is the _context_ of the test, meaning that it will be passed to
+ * the test and later cleaned up. The rationale behind this is that the same
+ * dataset can be prepared and cleaned up for different tests.
+ */
 typedef gpointer (*TestSetup)(void);
+/** @brief Cleanup function
+ * This function is used to clean up the previously prepared context. You should
+ * free the allocated memory if neccessary.
+ */
 typedef void (*TestCleanup)(gpointer);
+/** @brief Test function
+ * TestFunction is the main body of the test case. Generaly speaking it should be
+ * independent of the preparation/cleanup (i.e. it should work independently of the 
+ * actual initialization as much as possible).
+ */
 typedef void (*TestFunction)(gpointer);
 
+/**
+ * Signifies the result of a given test case and suite.
+ */
 typedef enum
 {
+  /** The test case passed */
   TEST_PASSED = 0,
+  /** The test case failed */
   TEST_FAILED,
+  /** The test case resulted in a segmentation fault */
   TEST_SEGFAULT,
+  /** The test case failed because some internal error */
   TEST_INTERNAL,
 } TestCaseResult;
 
+/** @brief Individual test case
+ *
+ * Representation of an individual test case.
+ *
+ * @note Do not use directly. It may change at any time.
+ */
 struct _TestCase
 {
+  /** The suite the case belongs to */
   TestSuite      *m_suite;
 
+  /** Displayed name of the case */
   const gchar    *m_name;
 
+  /** Setup function of the test. Called first. */
   TestSetup       m_setup;
+  /** Cleanup function of the test. Called last. */
   TestCleanup     m_cleanup;
+  /** Test function. This should be the "body" of the test */
   TestFunction    m_test;
 
+  /** After the test ran, this will continue the result. */
   TestCaseResult  m_result;
 };
 
+/** @brief Test suite
+ *
+ * Suites are the groups in which test cases are handled. They are supposed
+ * to help the grouping of a test. They can be executed separately with
+ * --suite <suite name> from the command line.
+ *
+ * @note Do not use directly. It may change at any time.
+ */
 struct _TestSuite
 {
+  /** Displayed name of the test suite */
   const gchar    *m_name;
 
+  /** Contains the individual test cases */
   GPtrArray      *m_tests;
 
+  /** If all test resulted in TEST_PASSED, the suite passes. If
+   * even one test case fails in any way, the suite fails too.
+   */
   gboolean        m_passed;
 };
 
+/** @brief Test statistics
+ *
+ * Contains statistical information about the test cases and
+ * emitted messages.
+ *
+ * @note Do not use directly. It may change at any time.
+ */
 typedef struct _TestStatistics
 {
+  /** Number of emitted messages by priority */
   guint32       m_messages[LOG_DEBUG + 1];
+  /** Number of segmentation faults */
   guint32       m_sigsegv;
 
+  /** Number of tests passed */
   guint32       m_passed;
+  /** Number of tests failed */
   guint32       m_failed;
 } TestStatistics;
 
+/** @brief Test context
+ *
+ * This is the context of a test: it contains all the test suites (which contain the test
+ * cases), neccessary information about running the tests, etc.
+ *
+ * @note Do not use directly. It may change at any time.
+ */
 struct _TestContext
 {
+  /** List of suites */
   GPtrArray      *m_suites;
 
+  /** Statistics about the test */
   TestStatistics  m_statistics;
 
+  /** Enables/disables signal handling */
   gboolean        m_sighandle;
+  /** Enables/disables built-in leak detection */
   gboolean        m_leakwatch;
 
+  /** Directory to put the cores in (or NULL if no cores
+   * should be stored
+   */
   const gchar    *m_core_dir;
 };
 
+/** @brief Initialize test context
+ * @param self The initialized context
+ *
+ * Initializes the context. Parameters (like m_sighandle or m_sigsegv)
+ * should be set manually.
+ */
 void test_context_init(TestContext *self);
+/** @brief Clean up test context
+ * @param self Test context
+ */
 void test_context_destroy(TestContext *self);
 
+/** @brief Add test to context
+ * @param self Test context
+ * @param suite_name Suite test belongs to
+ * @param test_name Name of the current test
+ * @param setup Setup function (NULL if none)
+ * @param cleanup Cleanup function (NULL if none)
+ * @param func Test function (NULL if none)
+ *
+ * This function is used to fill a test context with test cases. Suites are
+ * handled implicitly, so there is no need to add them separately.
+ */
 void test_add(TestContext *self,
               const gchar *suite_name,
               const gchar *test_name,
@@ -107,9 +203,26 @@ void test_add(TestContext *self,
               TestCleanup cleanup,
               TestFunction func);
 
+/** @brief Run all tests
+ * @param self Test context
+ * @return Wheter all tests succeeded.
+ *
+ * Runs all tests and collects the statistics
+ */
 gboolean tinu_test_all_run(TestContext *self);
+/** @brief Run an individual suite
+ * @param self Test context
+ * @param suite_name Suite to run
+ * @return Wheter the test suite succeeded.
+ *
+ * This runs only a distinct test suite. Suites are accessed by name.
+ */
 gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
 
+/** @brief Log an assertion failure
+ * @param cond Assertion condition
+ * @internal
+ */
 #define TINU_ASSERT_LOG_FAIL(cond)                          \
   log_error("Assertion failed",                             \
             msg_tag_str("condition", #cond),                \
@@ -117,6 +230,10 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
             msg_tag_str("function", __PRETTY_FUNCTION__),   \
             msg_tag_int("line", __LINE__), NULL)
 
+/** @brief Log an assertion pass
+ * @param cond Assertion condition
+ * @internal
+ */
 #define TINU_ASSERT_LOG_PASS(cond)                          \
   log_debug("Assertion passed",                             \
             msg_tag_str("condition", #cond),                \
@@ -124,6 +241,12 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
             msg_tag_str("function", __PRETTY_FUNCTION__),   \
             msg_tag_int("line", __LINE__), NULL)
 
+/** @brief `TRUE' Assertion
+ * @param cond Assertion condition
+ *
+ * This macro checks the condition given and fails (that is, emits
+ * a SIGABRT) if the condition is not met.
+ */
 #define TINU_ASSERT_TRUE(cond)                              \
   do                                                        \
     {                                                       \
@@ -138,6 +261,12 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
         }                                                   \
     } while (0)
 
+/** @brief `FALSE' Assertion
+ * @param cond Assertion condition
+ *
+ * This macro checks the condition given and fails (that is, emits
+ * a SIGABRT) if the condition is met.
+ */
 #define TINU_ASSERT_FALSE(cond) TINU_ASSERT_TRUE(!(cond))
 
 #endif
