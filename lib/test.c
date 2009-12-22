@@ -119,11 +119,8 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
   g_test_case_current = test;
   g_test_context_current = self;
 
-  if (test->m_setup && !test->m_setup(&ctx))
-    {
-      *result = TEST_FAILED;
-      return;
-    }
+  if (test->m_setup)
+    ctx = test->m_setup();
 
   if (test->m_test)
     test->m_test(ctx);

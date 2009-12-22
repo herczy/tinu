@@ -61,11 +61,10 @@ test_leak_1(gpointer context G_GNUC_UNUSED)
   malloc(1024);
 }
 
-gboolean
-test_leak_2_setup(gpointer *context)
+gpointer
+test_leak_2_setup(void)
 {
-  *context = malloc(1024);
-  return TRUE;
+  return malloc(1024);
 }
 
 void
@@ -74,8 +73,8 @@ test_leak_2(gpointer context)
   TINU_ASSERT_TRUE(context);
 }
 
-gboolean
-test_hash_1_setup(gpointer *context)
+gpointer
+test_hash_1_setup(void)
 {
   GHashTable *self = g_hash_table_new(g_str_hash, g_str_equal);
 
@@ -87,8 +86,7 @@ test_hash_1_setup(gpointer *context)
   /* Note how we can assert in the setup phase too (also in the cleanup phase) */
   TINU_ASSERT_TRUE(g_hash_table_size(self) == 4);
 
-  *context = self;
-  return TRUE;
+  return self;
 }
 
 void

@@ -42,7 +42,7 @@ typedef struct _TestCase TestCase;
 typedef struct _TestSuite TestSuite;
 typedef struct _TestContext TestContext;
 
-typedef gboolean (*TestSetup)(gpointer *);
+typedef gpointer (*TestSetup)(void);
 typedef void (*TestCleanup)(gpointer);
 typedef void (*TestFunction)(gpointer);
 
