@@ -152,7 +152,7 @@ def build(bld):
   if bld.env['HAVE_COREDUMPER']:
     bld.add_subdirs('coredumper')
 
-  bld.add_subdirs('lib test')
+  bld.add_subdirs('lib')
 
   if bld.env['EXAMPLE']:
     bld.add_subdirs('example')
