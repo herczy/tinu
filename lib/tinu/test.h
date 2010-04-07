@@ -37,6 +37,7 @@
 #define _TINU_TEST_H
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib/gtypes.h>
 #include <glib/garray.h>
@@ -260,6 +261,14 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
           TINU_ASSERT_LOG_PASS(cond);                       \
         }                                                   \
     } while (0)
+
+/** @brief Check if the two strings are equal
+ * @param str1 First string
+ * @param str2 Second string
+ *
+ * This macro checks wheter two strings are equal or not
+ */
+#define TINU_ASSERT_STREQ(str1, str2) do { log_debug("Streq", msg_tag_str("str1", (str1)), msg_tag_str("str2", (str2)), NULL); TINU_ASSERT_TRUE (strcmp((str1), (str2)) == 0); } while(0)
 
 /** @brief `FALSE' Assertion
  * @param cond Assertion condition
