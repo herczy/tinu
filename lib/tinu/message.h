@@ -60,6 +60,8 @@ void msg_destroy(Message *self);
 void msg_append(Message *self, MessageTag *tag0, ...);
 void msg_vappend(Message *self, MessageTag *tag0, va_list vl);
 
+void msg_remove_tag(Message *self, const gchar *tag);
+
 MessageTag *msg_find_tag(Message *self, const gchar *name);
 
 MessageTag *msg_tag_str(const gchar *tag, const gchar *string);

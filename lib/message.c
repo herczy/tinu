@@ -195,6 +195,25 @@ msg_append(Message *self, MessageTag *tag0, ...)
   va_end(vl);
 }
 
+void
+msg_remove_tag(Message *self, const gchar *tag)
+{
+  gint i;
+
+  for (i = 0; i < self->m_tag_count; i++)
+    {
+      if (!strcmp(self->m_tags[i]->m_tag, tag))
+        {
+          _msg_tag_clear(self->m_tags[i]);
+          if (i + 1 != self->m_tag_count)
+            memmove(self->m_tags + i, self->m_tags + i + 1, (self->m_tag_count - i - 1) * sizeof(MessageTag *));
+          self->m_tag_count--;
+          self->m_tags = g_renew(MessageTag *, self->m_tags, self->m_tag_count);
+          break;
+        }
+    }
+}
+
 MessageTag *
 msg_find_tag(Message *self, const gchar *name)
 {
