@@ -138,7 +138,7 @@ msg_vcreate(gint priority, const gchar *msg, MessageTag *tag0, va_list vl)
 }
 
 Message *
-msg_copy(Message *self)
+msg_copy(const Message *self)
 {
   Message *res = g_new0(Message, 1);
   MessageTag *tag;

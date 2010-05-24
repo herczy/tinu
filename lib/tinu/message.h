@@ -54,7 +54,7 @@ typedef struct _Message
 
 Message *msg_create(gint priority, const gchar *msg, MessageTag *tag0, ...);
 Message *msg_vcreate(gint priority, const gchar *msg, MessageTag *tag0, va_list vl);
-Message *msg_copy(Message *self);
+Message *msg_copy(const Message *self);
 void msg_destroy(Message *self);
 
 void msg_append(Message *self, MessageTag *tag0, ...);
