@@ -35,6 +35,8 @@
 
 #include <tinu/backtrace.h>
 
+__BEGIN_DECLS
+
 typedef enum
 {
   LEAKWATCH_OPERATION_MALLOC,
@@ -62,5 +64,7 @@ typedef struct _MemoryEntry
 /* The hash table has gpointers as keys and 'struct _MemoryEntry's as values */
 gpointer tinu_leakwatch_simple(GHashTable **result);
 void tinu_leakwatch_simple_dump(GHashTable *result, gint loglevel);
+
+__END_DECLS
 
 #endif

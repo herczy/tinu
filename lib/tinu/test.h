@@ -44,6 +44,8 @@
 
 #include <tinu/log.h>
 
+__BEGIN_DECLS
+
 typedef struct _TestCase TestCase;
 typedef struct _TestSuite TestSuite;
 typedef struct _TestContext TestContext;
@@ -277,5 +279,7 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
  * a SIGABRT) if the condition is met.
  */
 #define TINU_ASSERT_FALSE(cond) TINU_ASSERT_TRUE(!(cond))
+
+__END_DECLS
 
 #endif

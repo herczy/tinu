@@ -38,6 +38,8 @@
 #include <glib/garray.h>
 #include <glib/gerror.h>
 
+__BEGIN_DECLS
+
 typedef struct _MessageTag
 {
   gchar        *m_tag;
@@ -80,5 +82,7 @@ const gchar *msg_format_priority(gint priority);
 gint msg_get_priority_value(const gchar *name);
 
 gchar *msg_format_simple(const Message *self);
+
+__END_DECLS
 
 #endif

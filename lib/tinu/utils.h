@@ -36,6 +36,8 @@
 
 #include <tinu/log.h>
 
+__BEGIN_DECLS
+
 #define t_new(type, count) \
   (type *)__allocate(sizeof(type) * (count))
 
@@ -78,5 +80,7 @@ gchar *core_file_name(const gchar *dir, const gchar *suite, const gchar *test);
               __FILE__, __LINE__, __PRETTY_FUNCTION__);                 \
       exit(1);                                                          \
     }
+
+__END_DECLS
 
 #endif

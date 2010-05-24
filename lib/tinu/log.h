@@ -43,6 +43,8 @@
 
 #include <tinu/message.h>
 
+__BEGIN_DECLS
+
 /** @brief Message handler
  * @param msg Message to be handled
  * @param user_data User data defined when adding handler
@@ -193,5 +195,7 @@ gpointer log_register_message_handler(MessageHandler handler,
  * Unregister the message handler
  */
 void log_unregister_message_handler(gpointer handler);
+
+__END_DECLS
 
 #endif

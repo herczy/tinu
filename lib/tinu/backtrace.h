@@ -36,6 +36,8 @@
 
 #include <tinu/log.h>
 
+__BEGIN_DECLS
+
 typedef struct _BacktraceEntry
 {
   gpointer    m_ptr;
@@ -68,5 +70,7 @@ void backtrace_entry_destroy(BacktraceEntry *self);
 
 MessageTag *msg_tag_trace(const gchar *tag, const Backtrace *trace);
 MessageTag *msg_tag_trace_current(const gchar *tag, int skip);
+
+__END_DECLS
 
 #endif

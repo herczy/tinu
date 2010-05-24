@@ -35,6 +35,10 @@
 #include <glib/gslist.h>
 #include <glib/gquark.h>
 
+#include <features.h>
+
+__BEGIN_DECLS
+
 typedef struct _DwarfEntry
 {
   GQuark        m_source;
@@ -59,5 +63,7 @@ DwarfHandle *dw_new(const gchar *name);
 void dw_destroy(DwarfHandle *self);
 
 const DwarfEntry *dw_lookup(DwarfHandle *self, gpointer ptr, guint32 tolerance);
+
+__END_DECLS
 
 #endif

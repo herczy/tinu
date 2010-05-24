@@ -39,6 +39,8 @@
 
 #include <tinu/test.h>
 
+__BEGIN_DECLS
+
 /** @brief Main function of the framework
  * @param argc Pointer to the argument count (as given by main)
  * @param argv Pointer to the argument list (as given by main)
@@ -65,5 +67,7 @@ void tinu_test_add(const gchar *suite_name,
                    TestSetup setup,
                    TestCleanup cleanup,
                    TestFunction func);
+
+__END_DECLS
 
 #endif
