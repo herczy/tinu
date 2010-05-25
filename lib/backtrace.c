@@ -53,6 +53,8 @@ static DwarfHandle *g_backtrace_dwarf;
 
 extern const gchar *g_runtime_name;
 
+gchar *(*g_demangler)(const gchar *function) = g_strdup;
+
 static void
 _backtrace_cleanup()
 {
@@ -123,7 +125,10 @@ _backtrace_resolve_info(const gpointer addr)
 
       res->m_ptr = addr;
       res->m_offset = addr - info.dli_saddr;
-      res->m_function = g_strdup(info.dli_sname);
+      if (info.dli_sname)
+        res->m_function = g_demangler(info.dli_sname);
+      if (!res->m_function)
+        res->m_function = g_strdup("<unknown>");
       res->m_file = g_strdup(info.dli_fname);
     }
   return res;
@@ -295,6 +300,15 @@ backtrace_dump(const Backtrace *self, DumpCallback callback, void *user_data)
         callback(BACKTRACE_ENTRY_INVALID, user_data);
 
     }
+}
+
+BacktraceEntry *
+backtrace_line(const Backtrace *self, guint32 index)
+{
+  if (index >= self->m_length)
+    return NULL;
+
+  return _backtrace_resolve_info(self->m_symbols[index]);
 }
 
 gboolean

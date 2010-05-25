@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include <tinu/log.h>
+#include <tinu/config.h>
 
 __BEGIN_DECLS
 
@@ -65,11 +66,16 @@ void backtrace_dump_log(const Backtrace *self, const gchar *msg_prefix, gint pri
 void backtrace_dump_file(const Backtrace *self, FILE *output, guint8 indent);
 void backtrace_dump(const Backtrace *self, DumpCallback callback, gpointer user_data);
 
+BacktraceEntry *backtrace_line(const Backtrace *self, guint32 index);
 gboolean backtrace_resolv_lines(const BacktraceEntry *entry, const gchar **src, guint32 *line);
 void backtrace_entry_destroy(BacktraceEntry *self);
 
 MessageTag *msg_tag_trace(const gchar *tag, const Backtrace *trace);
 MessageTag *msg_tag_trace_current(const gchar *tag, int skip);
+
+#ifdef CXXWRAPPER
+extern gchar *(*g_demangler)(const gchar *function);
+#endif
 
 __END_DECLS
 

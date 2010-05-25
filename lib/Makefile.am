@@ -14,3 +14,10 @@ libtinu_la_CFLAGS += -I../coredumper
 libtinu_la_LDFLAGS += ../coredumper/libcoredumper.la
 endif
 endif
+
+if CXXWRAPPER
+lib_LTLIBRARIES += libtinucxx.la
+libtinucxx_la_SOURCES = cxxwrap.cc
+libtinucxx_la_CXXFLAGS = $(libtinu_la_CFLAGS)
+libtinucxx_la_LDFLAGS = $(libtinu_la_LDFLAGS) libtinu.la
+endif

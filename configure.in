@@ -3,6 +3,7 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([lib/tinu.h])
 
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
@@ -21,6 +22,10 @@ AC_ARG_WITH(stacksize,
   AC_HELP_STRING([--with-stack-size=ARG],
     [set test stack size in kbytes @<:@default=256kb@:>@]),
   stack_size=$withval, stack_size=256)
+AC_ARG_WITH(cxxwrapper,
+  AC_HELP_STRING([--with-cxxwrapper=yes/no],
+    [enable cxx wrapper @<:@default=yes@:>@]),
+  cxx_wrapper="$withval", cxx_wrapper="yes")
 
 AC_CHECK_LIB(dl, dlopen, [], AC_MSG_ERROR([dl library missing]))
 AC_CHECK_LIB(elf, elf_begin, has_elf="yes", has_elf="no")
@@ -51,6 +56,11 @@ fi
 AM_CONDITIONAL(COREDUMPER, test x$with_coredumper = xyes)
 if test x$with_coredumper = xyes; then
   AC_DEFINE(COREDUMPER_ENABLED, 1, [coredumper support])
+fi
+
+AM_CONDITIONAL(CXXWRAPPER, test x$cxx_wrapper = xyes)
+if test x$cxx_wrapper = xyes; then
+  AC_DEFINE(CXXWRAPPER, 1, [cxx wrapper enabled])
 fi
 
 if test x$with_coredumper = xyes -a x$with_elfdebug != xyes; then
