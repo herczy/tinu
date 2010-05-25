@@ -1,0 +1,263 @@
+2010-05-25  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * configure.in, example/Makefile.am, example/cxxexample.cc, lib/Makefile.am,
+  lib/backtrace.c, lib/cxxwrap.cc, lib/tinu.h, lib/tinu/backtrace.h,
+  lib/tinu/cxxwrap.h: CPP wrapper added to TINU (fixes: #33)
+
+  * .gitignore, Makefile.am, autogen.sh, configure.in, coredumper/Makefile.am,
+  coredumper/elfcore.h, coredumper/wscript_build, example/Makefile.am,
+  example/wscript_build, lib/Makefile.am, lib/backtrace.c, lib/leakwatch.c,
+  lib/main.c, lib/test.c, lib/tinu/utils.h, lib/utils.c, lib/wscript_build,
+  ltmain.sh, test, waf, wscript: Moved build system from waf to
+  autoconf/automake (fixes: #32)
+
+2010-05-24  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/tinu/backtrace.h, lib/tinu/dwarf.h, lib/tinu/leakwatch.h,
+  lib/tinu/log.h, lib/tinu/main.h, lib/tinu/message.h, lib/tinu/test.h,
+  lib/tinu/utils.h: __BEGIN_DECL and __END_DECL added to headers for inclusions
+  from C++ files (fixes: #nobug)
+
+  * lib/message.c, lib/tinu/message.h: msg_remove_tag added (fixes: #nobug)
+
+  * lib/message.c, lib/tinu/message.h: msg_copy takes a const Message (fixes:
+  #nobug)
+
+2010-04-07  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/tinu/test.h: STREQ assertion macro added
+
+2009-12-22  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * doc/doxygen.conf: [doc] Typo fixed in doxygen config (fixes: #nobug)
+
+  * doc/doxygen.conf, lib/tinu/log.h, lib/tinu/main.h, lib/tinu/test.h: [doc]
+  Doxygen documentation added (fixes: #5)
+
+  * example/example.c, lib/test.c, lib/tinu/test.h: [API] Minimal API change
+  (fixes: #nobug)
+
+2009-12-09  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * VERSION: [version] bumped to v0.1b as the upcoming version (fixes: #nobug)
+
+2009-12-22  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * COPYING, example/example.c, lib/backtrace.c, lib/dwarf.c, lib/leakwatch.c,
+  lib/log.c, lib/main.c, lib/message.c, lib/test.c, lib/tinu/backtrace.h,
+  lib/tinu/dwarf.h, lib/tinu/leakwatch.h, lib/tinu/log.h, lib/tinu/main.h,
+  lib/tinu/message.h, lib/tinu/test.h, lib/tinu/utils.h, lib/utils.c: Copyright
+  notice added to files and COPYING file created (fixes: #13)  TINU uses the
+  New BSD License.
+
+  * test/test_backtrace.c, test/test_leakwatch.c, test/test_log.c,
+  test/test_main.c, test/wscript_build, wscript: Removing redundant test code
+  until proper way for testing found (fixes: #nobug)  "Who tests the test
+  framework?"
+
+2009-12-09  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/wscript_build: [waf] removed unneccessary uselibs (fixes: #14)
+
+  * wscript: [waf] if build dir does not exists when creating a
+  release/snapshot, create it (fixes: #nobug)
+
+  * COPYING.coredumper, coredumper/VERSION, coredumper/coredumper.c,
+  coredumper/coredumper.h, coredumper/elfcore.c, coredumper/elfcore.h,
+  coredumper/linux_syscall_support.h, coredumper/linuxthreads.c,
+  coredumper/linuxthreads.h, coredumper/thread_lister.c,
+  coredumper/thread_lister.h, coredumper/wscript_build, lib/main.c, lib/test.c,
+  lib/tinu/test.h, lib/tinu/utils.h, lib/utils.c, lib/wscript_build, wscript:
+  When a signal occurs, dump a core file (fixes: #25)  Imported Google core
+  dumper v1.2.1.  The retained copyright notice is in 'COPYING.coredumper'.
+
+  * lib/test.c: Print test case and suite name on signal (fixes: #nobug)
+
+  * lib/message.c, lib/tinu/message.h: Use guint instead of gint in msg_tag_hex
+  (fixes: #nobug)
+
+2009-11-29  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/test.c: Collect statistics even if --no-sighandle was specified (fixes:
+  #3)
+
+2009-11-28  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/dwarf.c: DWARF handle cleanup caused segfault (fixes: #nobug)
+
+  * example/example.c: A setup function had no return value in example.c
+  (fixes: #nobug)
+
+  * lib/backtrace.c, lib/dwarf.c, lib/leakwatch.c, lib/main.c,
+  test/test_backtrace.c: Fixed warning messages given by gcc (except one in
+  test_main.c) (fixes: #nobug)
+
+  * lib/backtrace.c: clean up DWARF handle before exit (fixes: #nobug)
+
+  * example/wscript_build, lib/wscript_build, test/wscript_build: [waf] change
+  the default object extension to .o (fixes: #nobug)
+
+  * wscript: [waf] support profiling and coverage gcc options (fixes: #20)
+
+  * example/wscript_build, lib/tinu.pc.in, lib/wscript_build,
+  test/wscript_build, wscript: [waf] build script cleaned up a bit (fixes: #14)
+
+  * lib/dwarf.c: DWARF info loading split into two functions (fixes: #nobug)
+
+  * lib/backtrace.c: Check if DWARF info is loaded before resolving line info
+  (fixes: #nobug)
+
+  * wscript: Release/snapshot archive directory changed (fixes: #nobug)
+
+2009-11-26  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * wscript: [waf] release/snapshot creating capabilities added (fixes: #nobug)
+
+  * wscript: [waf] added option groups to configure (fixes: #nobug)
+
+  * lib/tinu.h: Missing header issue fixed (fixes: #nobug)
+
+2009-11-25  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * example/example.c, example/wscript_build: Example did not include the
+  necessary libraries (fixes: #nobug)
+
+  * lib/test.c: Dump a more detailed log if signal was received (fixes: #nobug)
+
+  * lib/backtrace.c, lib/dwarf.c, lib/main.c, lib/tinu/backtrace.h,
+  lib/tinu/dwarf.h, lib/wscript_build, test/wscript_build, wscript: Retrieve
+  line number information with DWARF library (fixes: #17)
+
+  * lib/main.c: Spelling errors fixed (fixes: #nobug)
+
+2009-11-22  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/backtrace.c, lib/tinu/backtrace.h, lib/wscript_build,
+  test/wscript_build, wscript: Changed resolution method for backtrace (fixes:
+  #16)
+
+  * test/wscript_build: APPLOG reference removed from test wscript config file
+  (related: #7)
+
+  * lib/cleanup.c, lib/leakwatch.c, lib/main.c, lib/tinu/cleanup.h,
+  lib/wscript_build: Removed "custom" cleanup code since it did nothing usefull
+  (fixes: #11)
+
+  * lib/tinu/log.h: Wrong function was exported (fixes: #nobug)
+
+2009-11-21  Hercinger Viktor <herczy@spectre.(none)>
+
+  * lib/backtrace.c: Missing return statement was fixed (fixes: #nobug)
+
+2009-11-20  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * example/example.c, example/wscript_build, wscript: Example test source
+  added (fixes: #10)
+
+  * lib/backtrace.c, lib/leakwatch.c, lib/log.c, lib/main.c, lib/message.c,
+  lib/tinu.h, lib/tinu/backtrace.h, lib/tinu/log.h, lib/tinu/message.h,
+  lib/tinu/test.h, lib/tinu/utils.h, lib/wscript_build, test/test_backtrace.c,
+  test/test_leakwatch.c, test/test_main.c, wscript: Applog imported manually
+  (reduces external dependencies) (fixes: #7)  The original applog repository
+  can be found at: http://git.bteam.hu/~herczy/applog.git  This old repository
+  will not be maintained until separation is needed.
+
+2009-11-19  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * .gitignore, waf: Waf added to project
+
+  * ISSUES: ISSUES file removed since we have redmine now
+
+2009-11-17  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * VERSION: Version file added
+
+  * lib/test.c: Removed warning in test.c
+
+  * lib/tinu/test.h: tinu_test_suite_run was not exported
+
+  * lib/backtrace.c: If offset in trace is '0' accept it, give no warning
+  (fixes: #nobug)
+
+  * ISSUES, lib/main.c, lib/test.c, lib/tinu/test.h, test/test_main.c, wscript:
+  Use ucontext_t structures/functions instead of jmp_t-s (see issue #1)
+
+2009-11-03  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/test.c: Display the correct message if test ran without signals
+
+  * lib/test.c: If setup fails, the test fails
+
+2009-10-27  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/main.c: Logging into a file added
+
+2009-10-24  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/main.c, wscript: Version information switch added
+
+  * lib/main.c: Leakwatcher off by default
+
+  * ISSUES: ISSUES file added
+
+  * lib/main.c, lib/test.c: Ability to run one suite at a time
+
+2009-10-23  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * .gitignore, wscript: Build dir changed from _build to _build_
+
+  * lib/backtrace.c, lib/cleanup.c, lib/leakwatch.c, lib/main.c,
+  lib/tinu/backtrace.h, wscript: Threading removed as it was unused and
+  unneeded
+
+  * lib/main.c, lib/test.c, lib/tinu/test.h: Leakwatch can be disabled
+
+  * lib/backtrace.c, lib/leakwatch.c, lib/log.c, lib/main.c, lib/message.c,
+  lib/test.c, lib/tinu/backtrace.h, lib/tinu/log.h, lib/tinu/message.h,
+  lib/tinu/test.h, lib/tinu/utils.h, lib/utils.c, lib/wscript_build,
+  test/test_backtrace.c, test/test_leakwatch.c, test/test_main.c,
+  test/wscript_build, wscript: Logging was made into a different repository
+
+2009-10-22  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/tinu/log.h: Asserts exit instead of abort
+
+  * lib/main.c, lib/test.c, lib/tinu/test.h: Hidden option to disable signal
+  catching
+
+  * lib/leakwatch.c: Leakwatch disable works correctly when handle is
+  unregistered
+
+2009-10-21  Hercinger Viktor <hercinger.viktor@gmail.com>
+
+  * lib/test.c: Fixed a double count and a bad count
+
+  * lib/main.c, lib/test.c, lib/tinu/test.h: Removed superfluous hooks and
+  moved leakwatch code to test
+
+  * lib/main.c: Test statistics printer added
+
+  * lib/main.c, lib/test.c, lib/tinu/test.h: Test statistics added
+
+  * lib/log.c, lib/message.c, lib/tinu/message.h: msg_format_priority takes a
+  priority instead of a message
+
+  * lib/test.c, test/test_main.c: Testing framework refactored to use abort()
+  to signal an unsuccessfull test
+
+  * lib/tinu/test.h: Assertion macros added
+
+  * lib/tinu.h, lib/tinu.pc.in, lib/wscript_build, test/wscript_build, wscript:
+  Installation process implemented
+
+  * lib/backtrace.c, lib/leakwatch.c, lib/log.c, lib/main.c, lib/message.c,
+  lib/test.c, lib/tinu/backtrace.h, lib/tinu/leakwatch.h, lib/tinu/log.h,
+  lib/tinu/message.h, lib/tinu/test.h, lib/tinu/utils.h, lib/utils.c, wscript:
+  Code cleanup
+
+  * .gitignore, lib/backtrace.c, lib/cleanup.c, lib/leakwatch.c, lib/log.c,
+  lib/main.c, lib/message.c, lib/test.c, lib/tinu/backtrace.h,
+  lib/tinu/cleanup.h, lib/tinu/leakwatch.h, lib/tinu/log.h, lib/tinu/main.h,
+  lib/tinu/message.h, lib/tinu/test.h, lib/tinu/utils.h, lib/utils.c,
+  lib/wscript_build, test/test_backtrace.c, test/test_leakwatch.c,
+  test/test_log.c, test/test_main.c, test/wscript_build, wscript: Imported code

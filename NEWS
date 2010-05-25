@@ -1,0 +1,7 @@
+0.1a
+  Tue Dec 22 15:08:11 2009 +0100
+
+  * Project started
+  * XUnit-like test cases
+  * Resolving backtrace info
+  * Leakwatcher

@@ -1,0 +1,74 @@
+What is TINU?
+-------------
+
+  TINU is a unit testing framework for C and C++ (through a wrapper) languages.
+  It was designed to give the programmer as much helpful information as neccessary,
+  so that errors found can be traced down and fixed as fast as possible. Unfortunately
+  this makes tinu a bit bigger than other unit test frameworks.
+
+How to compile?
+---------------
+
+  TINU uses autoconf and automake for building. However you don't need to have them
+  installed (only if you intend to modify the Makefiles and the configure files).
+
+  Compiling can be done the following way:
+
+    $ ./configure --prefix=/usr
+
+  After configure returns without errors, you can build and install the package the
+  following way:
+
+    $ make
+    $ make install
+
+How to use?
+-----------
+
+  Using Tinu is easy. If you compile your unit tests by hand, use the following:
+
+    $ $CC -o unittest unittest.c $(pkg-config tinu --libs --cflags)
+
+  If you use Tinu from autoconf/automake project, just add
+
+    PKG_CHECK_MODULES(LIBTINU, tinu >= 0.1a)
+
+  to your configure.ac file and
+
+    yourunittest_CFLAGS = @CFLAGS@
+    yourunittest_LDFLAGS = @LDFLAGS@
+
+The CPP wrapper
+---------------
+
+  Tinu has a CPP wrapper (called cxxwrap) for making Tinus integration into C++
+  projects easier. At the time of writing the following C/C++ mappings have been
+  implemented:
+
+    * CxxTinu: wrapper for the tinu_main, tinu_test_add and related functions. Should
+               be instantiated at the beginning of the main function. No further
+               actions are neccessary as the destructor takes care of running the
+               main function and returning the appropriate response.
+
+    * CxxTest: test cases can be implemented with these. CxxTest descended classes
+               are registered using CxxTinu::add_test.
+
+    * CxxMessageHandler: used for implementing custom message handlers.
+
+    * CxxLeakwatch: used for implementing custom leak-detectors.
+
+    * There are also other classes but they are used with the ones mentioned above.
+
+Copyrights
+----------
+
+  TINU is copyright (c) 2009, 2010 Viktor Hercinger <hercinger.viktor@gmail.com> amd
+  is distributed under the terms of the BSD license.
+
+  For further details see the file COPYING
+
+  Coredumper is copyright (c) 2005-2007, Google Inc. and is distributed under the terms
+  of the BSD license.
+
+  For further details see the file COPYING.coredumper
+
