@@ -6,3 +6,5 @@ _build_
 .old*
 .unused
 vim.h
+autom4te*
+.libs

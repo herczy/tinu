@@ -1,0 +1,73 @@
+AC_INIT(tinu, [0.1b], [https://tracker.bteam.hu/projects/tinu])
+AM_INIT_AUTOMAKE
+AC_CONFIG_SRCDIR([lib/tinu.h])
+
+AC_PROG_CC
+AM_PROG_CC_C_O
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+
+PKG_CHECK_MODULES(LIBGLIB, glib-2.0 >= 2.22)
+
+AC_ARG_WITH(coredumper,
+  AC_HELP_STRING([--with-coredumper=yes/no/auto],
+    [enable coredumper support @<:@default=auto@:>@]),
+  with_coredumper="$withval", with_coredumper="auto")
+AC_ARG_WITH(elfdebug,
+  AC_HELP_STRING([--with-elfdebug=yes/no/auto],
+    [enable elf and dwarf support @<:@default=auto@:>@]),
+  with_elfdebug="$withval", with_elfdebug="auto")
+AC_ARG_WITH(stacksize,
+  AC_HELP_STRING([--with-stack-size=ARG],
+    [set test stack size in kbytes @<:@default=256kb@:>@]),
+  stack_size=$withval, stack_size=256)
+
+AC_CHECK_LIB(dl, dlopen, [], AC_MSG_ERROR([dl library missing]))
+AC_CHECK_LIB(elf, elf_begin, has_elf="yes", has_elf="no")
+AC_CHECK_LIB(dwarf, dwarf_linesrc, has_dwarf="yes", has_dwarf="no")
+
+AC_MSG_CHECKING([elfdebug should be enabled])
+if test x$with_elfdebug = xauto; then
+  if test x$has_elf = xyes -a x$has_dwarf = xyes; then
+    with_elfdebug="yes"
+    AC_MSG_RESULT(yes)
+  else
+    with_elfdebug="no"
+    AC_MSG_RESULT(no)
+  fi
+else
+  AC_MSG_RESULT(x$with_elfdebug)
+fi
+
+if test x$with_coredumper = xauto; then
+  with_coredumper=$with_elfdebug
+fi
+
+AM_CONDITIONAL(ELFDEBUG, test x$with_elfdebug = xyes)
+if test x$with_elfdebug = xyes; then
+  AC_DEFINE(ELFDEBUG_ENABLED, 1, [elf and dwarf support])
+fi
+
+AM_CONDITIONAL(COREDUMPER, test x$with_coredumper = xyes)
+if test x$with_coredumper = xyes; then
+  AC_DEFINE(COREDUMPER_ENABLED, 1, [coredumper support])
+fi
+
+if test x$with_coredumper = xyes -a x$with_elfdebug != xyes; then
+  AC_MSG_ERROR([cannot use coredumper without elfdebug (enable elfdebug or disable coredumper)])
+fi
+
+if test -d .git; then
+  AC_DEFINE_UNQUOTED(GIT_BRANCH, "`cat .git/HEAD | cut -f 3- -d/`", [git branch])
+  AC_DEFINE_UNQUOTED(GIT_COMMIT, "`git log -1 | head -1 | cut -f 2 -d' '`", [git revision])
+fi
+BUILD=`date +%c`
+AC_MSG_NOTICE([build time is $BUILD])
+AC_DEFINE_UNQUOTED(BUILDTIME, "$BUILD", [time of build])
+
+AC_MSG_NOTICE([stack size is $stack_size kbytes])
+AC_DEFINE_UNQUOTED(TEST_CTX_STACK_SIZE, $((stack_size * 1024)), [stack size when running isolated test cases])
+
+AC_CONFIG_HEADERS([lib/tinu/config.h])
+AC_CONFIG_FILES([Makefile lib/Makefile example/Makefile coredumper/Makefile])
+AC_OUTPUT

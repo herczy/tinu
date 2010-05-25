@@ -38,14 +38,13 @@
 #include <tinu/test.h>
 #include <tinu/backtrace.h>
 #include <tinu/leakwatch.h>
-
-#include <config.h>
+#include <tinu/config.h>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int);
 #endif
 
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
 #include <coredumper.h>
 #endif
 
@@ -70,7 +69,8 @@ void
 _signal_handler(int signo)
 {
   Backtrace *trace;
-#ifdef HAVE_COREDUMPER
+
+#ifdef COREDUMPER_ENABLED
   WriteCoreDump(core_file_name(g_test_context_current->m_core_dir,
     g_test_case_current->m_suite->m_name, g_test_case_current->m_name));
 #endif

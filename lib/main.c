@@ -35,12 +35,11 @@
 #include <glib/goption.h>
 #include <glib/gutils.h>
 
+#include <tinu/config.h>
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>
 #include <tinu/main.h>
 #include <tinu/log.h>
-
-#include <config.h>
 
 typedef enum
 {
@@ -70,7 +69,7 @@ static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 static const gchar *g_opt_suite = NULL;
 static const gchar *g_opt_file = NULL;
 
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
 static const gchar *g_opt_core_dir = "/tmp";
 #endif
 
@@ -170,7 +169,7 @@ static GOptionEntry g_main_opt_entries[] = {
     "Don't handle signals from test", NULL },
   { "suite", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_suite,
     "Run only the given suite", NULL },
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
   { "core-dir", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_core_dir,
     "Set target core directory (default: /tmp)" },
 #endif
@@ -182,7 +181,7 @@ static GOptionEntry g_main_opt_entries[] = {
 static void
 _tinu_version()
 {
-  fprintf(stderr, APPNAME " version " VERSION "\n"
+  fprintf(stderr, PACKAGE_NAME " version " PACKAGE_VERSION "\n"
                   "Build time: " BUILDTIME "\n"
 #ifdef GIT_BRANCH
                   "Git branch: " GIT_BRANCH "\n"
@@ -279,7 +278,7 @@ _tinu_show_case(TestCase *test)
 
           case TEST_FAILED :
             fprintf(stderr, "\033[31mfailed\033[0m");
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
             fprintf(stderr, " (core: %s)\n",
               core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
 #else
@@ -289,7 +288,7 @@ _tinu_show_case(TestCase *test)
 
           case TEST_SEGFAULT :
             fprintf(stderr, "\033[41m\033[1;37msegfault\033[0m");
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
             fprintf(stderr, " (core: %s)\n",
               core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
 #else
@@ -315,7 +314,7 @@ _tinu_show_case(TestCase *test)
 
           case TEST_FAILED :
             fprintf(stderr, "failed\n");
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
             fprintf(stderr, " (core: %s)\n",
               core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
 #else
@@ -325,7 +324,7 @@ _tinu_show_case(TestCase *test)
 
           case TEST_SEGFAULT :
             fprintf(stderr, "segfault");
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
             fprintf(stderr, " (core: %s)\n",
               core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
 #else
@@ -434,7 +433,7 @@ tinu_main(int *argc, char **argv[])
 
   g_main_test_context.m_sighandle = g_opt_sighandle;
   g_main_test_context.m_leakwatch = g_opt_leakwatch;
-#ifdef HAVE_COREDUMPER
+#ifdef COREDUMPER_ENABLED
   g_main_test_context.m_core_dir = g_opt_core_dir;
 #endif
 

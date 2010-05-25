@@ -94,18 +94,3 @@ core_file_name(const gchar *dir, const gchar *suite, const gchar *test)
   snprintf(res, sizeof(res), "%s/core.%s.%s", dir, suite, test);
   return res;
 }
-
-gchar *
-strndup(const gchar *str, gsize n)
-{
-  gint len = strlen(str);
-  gchar *res;
-
-  if (len > n)
-    len = n;
-
-  res = t_new(gchar, len + 1);
-  memcpy(res, str, len);
-
-  return res;
-}

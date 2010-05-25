@@ -38,8 +38,6 @@
 #include <glib/ghash.h>
 #include <glib/glist.h>
 
-#include <config.h>
-
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>
 

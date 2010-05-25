@@ -43,9 +43,9 @@
 #include <tinu/backtrace.h>
 #include <tinu/log.h>
 
-#include <config.h>
+//#include <config.h>
 
-#if HAVE_DWARF == 1
+#ifdef ELFDEBUG_ENABLED
 #include <tinu/dwarf.h>
 
 static gboolean g_backtrace_init = FALSE;
@@ -300,7 +300,7 @@ backtrace_dump(const Backtrace *self, DumpCallback callback, void *user_data)
 gboolean
 backtrace_resolv_lines(const BacktraceEntry *entry, const gchar **src, guint32 *line)
 {
-#if HAVE_DWARF == 1
+#ifdef ELFDEBUG_ENABLED
   return _backtrace_get_lineinfo(entry, src, line);
 #else
   return FALSE;
