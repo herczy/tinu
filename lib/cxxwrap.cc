@@ -169,7 +169,9 @@ CxxTinu::CxxTinu(int *argc, char **argv[])
   : m_argc(argc),
   m_argv(argv)
 {
+#ifdef ELFDEBUG_ENABLED
   g_demangler = cxx_demangle;
+#endif
 }
 
 CxxTinu::~CxxTinu()

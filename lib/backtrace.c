@@ -92,6 +92,7 @@ _backtrace_get_lineinfo(const BacktraceEntry *entry, const gchar **file, guint32
 }
 #else
 #define _backtrace_init()
+#define g_demangler g_strdup
 #endif
 
 #define MAX_BUF_SIZE      4096

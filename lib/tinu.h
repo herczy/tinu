@@ -11,7 +11,7 @@
 #include <tinu/message.h>
 
 /* CPP header */
-#if defined(__cplusplus) && CXXWRAPPER
+#if defined(__cplusplus) && CXXWRAPPER_ENABLED
 #include <tinu/cxxwrap.h>
 #endif
 
