@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: tinu
+Description: TINU Unittesting Library (C++ wrapper)
+Version: @VERSION@
+Libs: -ltinucxx @LIBGLIB_LIBS@ @LDFLAGS@
+Cflags: @LIBGLIB_CFLAGS@ @CXXFLAGS@
