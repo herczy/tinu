@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: tinu
+Description: TINU Unittesting Library
+Version: @VERSION@
+Libs: -ltinu @LIBGLIB_LIBS@ @LDFLAGS@
+Cflags: @LIBGLIB_CFLAGS@ @CFLAGS@
