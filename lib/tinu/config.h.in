@@ -9,6 +9,9 @@
 /* cxx wrapper enabled */
 #undef CXXWRAPPER_ENABLED
 
+/* debug options turned on */
+#undef EBUG
+
 /* elf and dwarf support */
 #undef ELFDEBUG_ENABLED
 
