@@ -80,8 +80,8 @@ if test x$with_coredumper = xyes; then
   AC_DEFINE(COREDUMPER_ENABLED, 1, [coredumper support])
 fi
 
-AM_CONDITIONAL(CXXWRAPPER, test x$enable_cxxwrapper = xyes)
-if test x$enable_cxxwrapper = xyes; then
+AM_CONDITIONAL(CXXWRAPPER, test x$enable_cxxwrapper != xno)
+if test x$enable_cxxwrapper != xno; then
   AC_DEFINE(CXXWRAPPER_ENABLED, 1, [cxx wrapper enabled])
 fi
 
@@ -101,6 +101,6 @@ AC_SUBST(CFLAGS)
 AC_CONFIG_HEADERS([lib/tinu/config.h])
 AC_CONFIG_FILES([Makefile lib/Makefile example/Makefile coredumper/Makefile])
 AC_OUTPUT([tinu.pc])
-if test x$enable_cxxwrapper = xyes; then
+if test x$enable_cxxwrapper != xno; then
   AC_OUTPUT([tinucxx.pc])
 fi

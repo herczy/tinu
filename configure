@@ -14788,7 +14788,7 @@ $as_echo "#define COREDUMPER_ENABLED 1" >>confdefs.h
 
 fi
 
- if test x$enable_cxxwrapper = xyes; then
+ if test x$enable_cxxwrapper != xno; then
   CXXWRAPPER_TRUE=
   CXXWRAPPER_FALSE='#'
 else
@@ -14796,7 +14796,7 @@ else
   CXXWRAPPER_FALSE=
 fi
 
-if test x$enable_cxxwrapper = xyes; then
+if test x$enable_cxxwrapper != xno; then
 
 $as_echo "#define CXXWRAPPER_ENABLED 1" >>confdefs.h
 
@@ -17447,7 +17447,7 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-if test x$enable_cxxwrapper = xyes; then
+if test x$enable_cxxwrapper != xno; then
   ac_config_files="$ac_config_files tinucxx.pc"
 
 cat >confcache <<\_ACEOF
