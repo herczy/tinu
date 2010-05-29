@@ -132,14 +132,6 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
 }
 
 TestCaseResult
-_test_case_run(TestContext *self, TestCase *test)
-{
-  TestCaseResult res;
-  _test_case_run_intern(self, test, &res);
-  return res;
-}
-
-TestCaseResult
 _test_case_run_single_test(TestContext *self, TestCase *test)
 {
   TestCaseResult res = TEST_PASSED;
