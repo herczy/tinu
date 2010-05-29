@@ -222,47 +222,43 @@ gboolean tinu_test_all_run(TestContext *self);
  */
 gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
 
-/** @brief Log an assertion failure
- * @param cond Assertion condition
- * @internal
+/** @brief Evaluate an assertion
+ * @param condition The condition to be asserted.
+ * @param assert_type A string that will be set in the message as the assert type
+ * (e.g. string compare, assert true, assert false, etc.)
+ * @param condstr The condition converted to a string.
+ * @param file The file where the assertion comes from
+ * @param func The function where the assertion comes from
+ * @param line The line where the assertion comes from 
+ * @param tag0 First tag to add to any message or NULL if none are appended
+ * @param ... Additional tags, NULL-terminated
+ *
+ * Before this function came into effect all assertions were macros,
+ * but this proved to be inflexible when hooking came into the picture.
+ *
+ * @note Do not use directly! Use the macros. This way the API does not
+ * change. This function can change.
  */
-#define TINU_ASSERT_LOG_FAIL(cond)                          \
-  log_error("Assertion failed",                             \
-            msg_tag_str("condition", #cond),                \
-            msg_tag_str("file", __FILE__),                  \
-            msg_tag_str("function", __PRETTY_FUNCTION__),   \
-            msg_tag_int("line", __LINE__), NULL)
+void tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *condstr,
+  const gchar *file, const gchar *func, gint line, MessageTag *tag0, ...);
 
-/** @brief Log an assertion pass
- * @param cond Assertion condition
- * @internal
- */
-#define TINU_ASSERT_LOG_PASS(cond)                          \
-  log_debug("Assertion passed",                             \
-            msg_tag_str("condition", #cond),                \
-            msg_tag_str("file", __FILE__),                  \
-            msg_tag_str("function", __PRETTY_FUNCTION__),   \
-            msg_tag_int("line", __LINE__), NULL)
-
-/** @brief `TRUE' Assertion
+/** @brief `TRUE' (or positive) Assertion
  * @param cond Assertion condition
  *
  * This macro checks the condition given and fails (that is, emits
  * a SIGABRT) if the condition is not met.
  */
-#define TINU_ASSERT_TRUE(cond)                              \
-  do                                                        \
-    {                                                       \
-      if (!(cond))                                          \
-        {                                                   \
-          TINU_ASSERT_LOG_FAIL(cond);                       \
-          abort();                                          \
-        }                                                   \
-      else                                                  \
-        {                                                   \
-          TINU_ASSERT_LOG_PASS(cond);                       \
-        }                                                   \
-    } while (0)
+#define TINU_ASSERT_TRUE(cond) \
+  tinu_test_assert((cond), "positive", #cond, __FILE__, __PRETTY_FUNCTION__, __LINE__, NULL);
+
+/** @brief `FALSE' (or negative) Assertion
+ * @param cond Assertion condition
+ *
+ * This macro checks the condition given and fails (that is, emits
+ * a SIGABRT) if the condition is met.
+ */
+#define TINU_ASSERT_FALSE(cond) \
+  tinu_test_assert(!(cond), "negative", #cond, __FILE__, __PRETTY_FUNCTION__, __LINE__, NULL);
 
 /** @brief Check if the two strings are equal
  * @param str1 First string
@@ -270,15 +266,10 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
  *
  * This macro checks wheter two strings are equal or not
  */
-#define TINU_ASSERT_STREQ(str1, str2) do { log_debug("Streq", msg_tag_str("str1", (str1)), msg_tag_str("str2", (str2)), NULL); TINU_ASSERT_TRUE (strcmp((str1), (str2)) == 0); } while(0)
-
-/** @brief `FALSE' Assertion
- * @param cond Assertion condition
- *
- * This macro checks the condition given and fails (that is, emits
- * a SIGABRT) if the condition is met.
- */
-#define TINU_ASSERT_FALSE(cond) TINU_ASSERT_TRUE(!(cond))
+#define TINU_ASSERT_STREQ(str1, str2) \
+  tinu_test_assert(strcmp((str1), (str2)) == 0, "string equality", "str1 == str2", \
+    __FILE__, __PRETTY_FUNCTION__, __LINE__, \
+    msg_tag_str("str1", str1), msg_tag_str("str2", str2), NULL);
 
 __END_DECLS
 

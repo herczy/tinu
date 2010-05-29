@@ -378,3 +378,35 @@ tinu_test_suite_run(TestContext *self, const gchar *suite_name)
   return _test_suite_run(self, suite);
 }
 
+void
+tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *condstr,
+  const gchar *file, const gchar *func, gint line, MessageTag *tag0, ...)
+{
+  va_list vl;
+  Message *msg;
+
+  if ((condition && g_log_max_priority >= LOG_DEBUG) ||
+      (!condition && g_log_max_priority >= LOG_ERR))
+    {
+      va_start(vl, tag0);
+      if (condition)
+        {
+          msg = msg_create(LOG_DEBUG, "Assertion passed", NULL);
+        }
+      else
+        {
+          msg = msg_create(LOG_ERR, "Assertion failed", NULL);
+        }
+
+      msg_append(msg, msg_tag_str("condition", condstr),
+                      msg_tag_str("type", assert_type),
+                      msg_tag_str("file", file),
+                      msg_tag_str("function", func),
+                      msg_tag_int("line", line), NULL);
+      msg_vappend(msg, tag0, vl);
+      log_message(msg, TRUE);
+    }
+
+  if (!condition)
+    abort();
+}
