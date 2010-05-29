@@ -65,6 +65,35 @@ typedef struct _LeakInfo
   gpointer        m_watch_handle;
 } LeakInfo;
 
+typedef struct _TestHookItem
+{
+  TestHookCb      m_callback;
+  gpointer        m_user_data;
+} TestHookItem;
+
+static gboolean
+_test_run_hooks(TestHookID hook_id, ...)
+{
+  va_list vl;
+  gint i;
+  gboolean ret;
+  TestHookItem *act;
+
+  for (i = 0; i < g_test_context_current->m_hooks->len; i++)
+    {
+      act = &g_array_index(g_test_context_current->m_hooks, TestHookItem, i);
+
+      va_start(vl, hook_id);
+      ret = act->m_callback(hook_id, g_test_context_current, act->m_user_data, vl);
+      va_end(vl);
+
+      if (!ret)
+        break;
+    }
+
+  return ret;
+}
+
 void
 _signal_handler(int signo)
 {
@@ -83,6 +112,11 @@ _signal_handler(int signo)
   backtrace_unreference(trace);
 
   g_signal = signo;
+
+  if (g_signal == SIGABRT)
+    _test_run_hooks(TEST_HOOK_SIGNAL_ABORT);
+  else
+    _test_run_hooks(TEST_HOOK_SIGNAL_SEGFAULT);
 
   setcontext(g_test_ucontext.uc_link);
 }
@@ -117,7 +151,7 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
   gpointer ctx = NULL;
 
   g_test_case_current = test;
-  g_test_context_current = self;
+  _test_run_hooks(TEST_HOOK_BEFORE_TEST, test);
 
   if (test->m_setup)
     ctx = test->m_setup();
@@ -129,6 +163,7 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
     test->m_cleanup(ctx);
 
   *result = TEST_PASSED;
+  _test_run_hooks(TEST_HOOK_AFTER_TEST, test, *result);
 }
 
 TestCaseResult
@@ -239,6 +274,9 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   gint i;
   gboolean res = TRUE;
 
+  g_test_context_current = self;
+  _test_run_hooks(TEST_HOOK_BEFORE_SUITE, suite);
+
   for (i = 0; i < suite->m_tests->len; i++)
     res &= TEST_PASSED ==
       _test_case_run_single_test(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
@@ -248,6 +286,8 @@ _test_suite_run(TestContext *self, TestSuite *suite)
             msg_tag_bool("result", res), NULL);
 
   suite->m_passed = res;
+
+  _test_run_hooks(TEST_HOOK_AFTER_SUITE, suite, res);
   return res;
 }
 
@@ -296,12 +336,14 @@ void
 test_context_init(TestContext *self)
 {
   self->m_suites = g_ptr_array_new();
+  self->m_hooks = g_array_new(FALSE, FALSE, sizeof(TestHookItem));
 }
 
 void
 test_context_destroy(TestContext *self)
 {
   g_ptr_array_free(self->m_suites, TRUE);
+  g_array_free(self->m_hooks, TRUE);
 }
 
 void
@@ -341,6 +383,16 @@ test_add(TestContext *self,
             msg_tag_str("case", test_name), NULL);
 }
 
+void
+test_register_hook(TestContext *self, TestHookCb hook, gpointer user_data)
+{
+  TestHookItem item = {
+    .m_callback = hook,
+    .m_user_data = user_data
+  };
+  g_array_append_val(self->m_hooks, item);
+}
+
 gboolean
 tinu_test_all_run(TestContext *self)
 {
@@ -360,6 +412,7 @@ gboolean
 tinu_test_suite_run(TestContext *self, const gchar *suite_name)
 {
   TestSuite *suite = _test_suite_lookup(self, suite_name, FALSE);
+  gboolean res;
 
   if (!suite)
     {
@@ -376,6 +429,8 @@ tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *cond
 {
   va_list vl;
   Message *msg;
+
+  _test_run_hooks(TEST_HOOK_ASSERT, condition, file, func, line);
 
   if ((condition && g_log_max_priority >= LOG_DEBUG) ||
       (!condition && g_log_max_priority >= LOG_ERR))

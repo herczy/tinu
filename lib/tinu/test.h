@@ -83,6 +83,28 @@ typedef enum
   TEST_INTERNAL,
 } TestCaseResult;
 
+typedef enum
+{
+  /** Hook indicating an assertion was evaluated */
+  TEST_HOOK_ASSERT,
+
+  /** Hook indicating a SIGABRT */
+  TEST_HOOK_SIGNAL_ABORT,
+  /** Hook indicating a SIGSEGV */
+  TEST_HOOK_SIGNAL_SEGFAULT,
+
+  /** Hook indicating the beginning of a test execution */
+  TEST_HOOK_BEFORE_TEST,
+  /** Hook indicating the ending of a test execution */
+  TEST_HOOK_AFTER_TEST,
+  /** Hook indicating the beginning of a suite execution */
+  TEST_HOOK_BEFORE_SUITE,
+  /** Hook indicating the ending of a suite execution */
+  TEST_HOOK_AFTER_SUITE,
+} TestHookID;
+
+typedef gboolean (*TestHookCb)(TestHookID hook_id, TestContext *context, gpointer user_data, va_list vl);
+
 /** @brief Individual test case
  *
  * Representation of an individual test case.
@@ -174,6 +196,9 @@ struct _TestContext
    * should be stored
    */
   const gchar    *m_core_dir;
+
+  /** Test hook callbacks */
+  GArray         *m_hooks;
 };
 
 /** @brief Initialize test context
@@ -205,6 +230,16 @@ void test_add(TestContext *self,
               TestSetup setup,
               TestCleanup cleanup,
               TestFunction func);
+
+/** @brief Register a hook in the test context
+ * @param self Test context
+ * @param hook The hook callback function
+ * @param user_data The hook callback user data
+ *
+ * Registers a hook callback which is called at different points during
+ * the test/suite execution.
+ */
+void test_register_hook(TestContext *self, TestHookCb hook, gpointer user_data);
 
 /** @brief Run all tests
  * @param self Test context
