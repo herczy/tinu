@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: tinu
 Description: TINU Unittesting Library (C++ wrapper)
 Version: @VERSION@
-Libs: -ltinucxx @LIBGLIB_LIBS@ @LDFLAGS@
+Libs: -L@libdir@ -ltinucxx @LIBGLIB_LIBS@ @LDFLAGS@
 Cflags: @LIBGLIB_CFLAGS@ @CXXFLAGS@
