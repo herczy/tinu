@@ -86,6 +86,15 @@ public:
   }
 };
 
+class TestException : public CxxTest
+{
+public:
+  void test()
+  {
+    throw Exception("Something went wrong!");
+  }
+};
+
 int
 main(int argc, char *argv[])
 {
@@ -97,4 +106,5 @@ main(int argc, char *argv[])
   tinu.add_test<TestFailSegv>("fail", "segfault");
   tinu.add_test<TestLeakGlobal>("leak", "global");
   tinu.add_test<TestLeakCustom>("leak", "custom");
+  tinu.add_test<TestException>("fail", "exception");
 }

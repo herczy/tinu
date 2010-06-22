@@ -49,25 +49,6 @@
 namespace Tinu
 {
 
-/* Exception */
-
-class Exception : public std::exception
-{
-public:
-  inline Exception(const std::string &msg) throw()
-    : m_message(msg)
-  {}
-
-  virtual ~Exception() throw()
-  {}
-
-  virtual inline const char *what() throw()
-  { return m_message.c_str(); }
-
-private:
-  std::string m_message;
-};
-
 /* Backtrace */
 
 class CxxBacktrace
@@ -101,8 +82,41 @@ public:
   inline const Backtrace *obj() const
   { return m_obj; }
 
+  inline void dump_log(const std::string &prefix, gint priority) const
+  { backtrace_dump_log(m_obj, prefix.c_str(), priority); }
+
 private:
   Backtrace *m_obj;
+};
+
+/* Exception */
+
+class Exception : public std::exception
+{
+public:
+  inline Exception(const std::string &msg) throw()
+    : m_message(msg)
+  {}
+
+  virtual ~Exception() throw()
+  {}
+
+  virtual inline const char *what() const throw()
+  { return m_message.c_str(); }
+
+  virtual inline const CxxBacktrace &trace() const
+  { return m_trace; }
+
+  inline void dump_log(const std::string &message,
+                       gint exception_priority, gint trace_priority = -1) const
+  {
+    log_format(exception_priority, message.c_str(), msg_tag_str("exception", what()), NULL);
+    m_trace.dump_log("    ", trace_priority < 0 ? exception_priority : trace_priority);
+  }
+
+private:
+  std::string m_message;
+  CxxBacktrace m_trace;
 };
 
 /* Leakwatcher */
