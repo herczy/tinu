@@ -33,6 +33,15 @@
 #include <glib/gmem.h>
 #include <glib/gtestutils.h>
 
+#include <sys/times.h>
+
+static clock_t
+_stat_time()
+{
+  struct tms t;
+  return times(&t);
+}
+
 static gboolean
 _stat_message_counter(Message *msg, gpointer user_data)
 {
@@ -63,7 +72,7 @@ _stat_hook_case_begin(TestHookID hook_id, TestContext *context, gpointer user_da
   memset(&test_info, 0, sizeof(test_info));
 
   test_info.m_test = va_arg(vl, TestCase *);
-  test_info.m_start = clock();
+  test_info.m_start = _stat_time();
 
   g_array_append_val(self->m_suite_current->m_test_info_list, test_info);
   self->m_test_current = &g_array_index(self->m_suite_current->m_test_info_list, StatTestInfo,
@@ -82,7 +91,7 @@ _stat_hook_case_end(TestHookID hook_id, TestContext *context, gpointer user_data
                 msg_tag_str("testcase", self->m_test_current->m_test->m_name), NULL);
       return;
     }
-  self->m_test_current->m_end = clock();
+  self->m_test_current->m_end = _stat_time();
   self->m_test_current->m_result = va_arg(vl, TestCaseResult);
 
   switch (self->m_test_current->m_result)
@@ -116,7 +125,7 @@ _stat_hook_suite_begin(TestHookID hook_id, TestContext *context, gpointer user_d
   memset(&suite_info, 0, sizeof(suite_info));
 
   suite_info.m_suite = va_arg(vl, TestSuite *);
-  suite_info.m_start = clock();
+  suite_info.m_start = _stat_time();
   suite_info.m_test_info_list = g_array_new(FALSE, FALSE, sizeof(StatTestInfo));
 
   g_array_append_val(self->m_suite_info_list, suite_info);
@@ -135,7 +144,7 @@ _stat_hook_suite_end(TestHookID hook_id, TestContext *context, gpointer user_dat
                 msg_tag_str("suite", self->m_suite_current->m_suite->m_name), NULL);
       return;
     }
-  self->m_suite_current->m_end = clock();
+  self->m_suite_current->m_end = _stat_time();
   self->m_suite_current->m_result = va_arg(vl, gboolean);
   self->m_suite_current = NULL;
 }

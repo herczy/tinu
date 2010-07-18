@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <unistd.h>
 
 #include <glib/gfileutils.h>
 #include <glib/gstrfuncs.h>
@@ -68,6 +69,7 @@ test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolea
   gchar *fname;
   FILE *file = _prg_report_passfile(&fname);
   gchar temp[4096];
+  double tics = (double)sysconf(_SC_CLK_TCK);
 
   StatSuiteInfo *suite;
   StatTestInfo *test;
@@ -85,18 +87,17 @@ test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolea
       _prg_report_print(file, "result=%d", suite->m_result ? 1 : 0);
       _prg_report_print(file, "asserts.passed=%d", suite->m_assertions_passed);
       _prg_report_print(file, "asserts.total=%d", suite->m_assertions);
+      _prg_report_print(file, "time=%lf", (suite->m_end - suite->m_start) / tics);
 
-      if (verbosity > STAT_VERB_SUITES)
+      for (j = 0; j < suite->m_test_info_list->len; j++)
         {
-          for (j = 0; j < suite->m_test_info_list->len; j++)
-            {
-              test = &g_array_index(suite->m_test_info_list, StatTestInfo, j);
+          test = &g_array_index(suite->m_test_info_list, StatTestInfo, j);
 
-              _prg_report_set("suite.%s.%s", suite->m_suite->m_name, test->m_test->m_name);
-              _prg_report_print(file, "result=%d", (test->m_result == TEST_SEGFAULT ? -1 : (test->m_result == TEST_FAILED ? 0 : 1)));
-              _prg_report_print(file, "asserts.passed=%d", test->m_assertions_passed);
-              _prg_report_print(file, "asserts.total=%d", test->m_assertions);
-            }
+          _prg_report_set("suite.%s.test.%s", suite->m_suite->m_name, test->m_test->m_name);
+          _prg_report_print(file, "result=%d", (test->m_result == TEST_SEGFAULT ? -1 : (test->m_result == TEST_FAILED ? 0 : 1)));
+          _prg_report_print(file, "asserts.passed=%d", test->m_assertions_passed);
+          _prg_report_print(file, "asserts.total=%d", test->m_assertions);
+          _prg_report_print(file, "time=%lf", (test->m_end - test->m_start) / tics);
         }
     }
 
