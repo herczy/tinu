@@ -247,6 +247,8 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
                  msg_tag_int("signal", g_signal),
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
+
+      _test_run_hooks(TEST_HOOK_AFTER_TEST, test, res);
     }
 
     if (leak_handler)
