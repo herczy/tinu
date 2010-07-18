@@ -1,6 +1,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+#include <errno.h>
+
 #include <glib/gfileutils.h>
 #include <glib/gstrfuncs.h>
 #include <glib/gtestutils.h>
@@ -12,9 +14,10 @@
 static const gchar *g_opt_program_name = NULL;
 static const gchar *g_opt_program_extra_opts = "";
 
+static const gchar *g_opt_filename = NULL;
+
 /* Globals */
 static gchar g_prg_prefix[4096];
-static gint g_prg_prefix_pos = 0;
 
 static void
 _prg_report_set(const gchar *fmt, ...)
@@ -63,12 +66,9 @@ test_report_program_check(StatisticsVerbosity verbosity, gboolean enable_colour)
 }
 
 static void
-test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour)
+_test_report_put_file(FILE *file, TestStatistics *stat)
 {
   gint i, j;
-  gchar *fname;
-  FILE *file = _prg_report_passfile(&fname);
-  gchar temp[4096];
   double tics = (double)sysconf(_SC_CLK_TCK);
 
   StatSuiteInfo *suite;
@@ -104,6 +104,17 @@ test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolea
   _prg_report_set("message");
   for (i = LOG_CRIT; i <= LOG_DEBUG; i++)
     _prg_report_print(file, "%s=%d", msg_format_priority(i), stat->m_messages[i]);
+}
+
+static void
+test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour)
+{
+  gchar *fname;
+  FILE *file = _prg_report_passfile(&fname);
+
+  gchar temp[4096];
+
+  _test_report_put_file(file, stat);
 
   fclose(file);
 
@@ -118,7 +129,7 @@ test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolea
   g_free(fname);
 }
 
-const GOptionEntry g_report_progam_module_options[] = {
+const GOptionEntry g_report_program_module_options[] = {
   { "program", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_program_name,
     "The program to pass the statistics to", NULL },
   { "program-opts", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_program_extra_opts,
@@ -128,9 +139,61 @@ const GOptionEntry g_report_progam_module_options[] = {
 
 const ReportModule g_report_progam_module = {
   .m_name = "program",
-  .m_options = g_report_progam_module_options,
+  .m_options = g_report_program_module_options,
 
   .m_check = &test_report_program_check,
   .m_handle = &test_report_program
+};
+
+static gboolean
+test_report_file_check(StatisticsVerbosity verbosity, gboolean enable_colour)
+{
+  gint _errno;
+
+  if (!g_opt_filename)
+    {
+      log_error("Missing destination name from file report", NULL);
+      return FALSE;
+    }
+  if (access(g_opt_filename, W_OK) == -1)
+    {
+      _errno = errno;
+      log_error("Cannot access file",
+                msg_tag_str("name", g_opt_filename),
+                msg_tag_int("code", _errno),
+                msg_tag_str("reason", strerror(_errno)), NULL);
+      return FALSE;
+    }
+  return TRUE;
+}
+
+static void
+test_report_file(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour)
+{
+  FILE *file = fopen(g_opt_filename, "w");
+
+  if (!file)
+    {
+      log_crit("Could not open file for file report",
+               msg_tag_str("", g_opt_filename), NULL);
+      g_assert(0);
+    }
+
+  _test_report_put_file(file, stat);
+  fclose(file);
+}
+
+const GOptionEntry g_report_file_module_options[] = {
+  { "file-destination", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_filename,
+    "Destination file", NULL },
+  { NULL }
+};
+
+const ReportModule g_report_file_module = {
+  .m_name = "file",
+  .m_options = g_report_file_module_options,
+
+  .m_check = &test_report_file_check,
+  .m_handle = &test_report_file
 };
 

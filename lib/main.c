@@ -74,6 +74,7 @@ const gchar *g_runtime_name = NULL;
 /* Reporting modules defined in the tinu framework */
 extern const ReportModule g_report_stderr_module;
 extern const ReportModule g_report_progam_module;
+extern const ReportModule g_report_file_module;
 
 /* Report module structure */
 static CList *g_report_modules = NULL;
@@ -281,6 +282,7 @@ tinu_main(int *argc, char **argv[])
 
   tinu_report_add(&g_report_stderr_module);
   tinu_report_add(&g_report_progam_module);
+  tinu_report_add(&g_report_file_module);
 
   if (!_tinu_options(argc, argv))
     return 1;

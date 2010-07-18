@@ -26,7 +26,7 @@ libtinu_la_SOURCES = backtrace.c \
                      clist.c \
                      statistics.c \
                      report-standard.c \
-                     report-program.c
+                     report-external.c
 libtinu_la_CFLAGS = -Itinu -Wall @LIBGLIB_CFLAGS@ @CFLAGS@
 libtinu_la_LDFLAGS = -version-info 0:0:0 @LIBGLIB_LIBS@ @LDFLAGS@
 

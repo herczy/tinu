@@ -56,7 +56,7 @@ typedef gboolean (*ReportingCheckCb)(StatisticsVerbosity verbosity, gboolean ena
 typedef struct _ReportModule
 {
   const gchar        *m_name;
-  GOptionEntry       *m_options;
+  const GOptionEntry *m_options;
 
   ReportingCheckCb    m_check;
   ReportingHandleCb   m_handle;
