@@ -32,7 +32,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include <glib/goption.h>
 #include <glib/gutils.h>
 
 #include <tinu/config.h>
@@ -40,17 +39,11 @@
 #include <tinu/leakwatch.h>
 #include <tinu/main.h>
 #include <tinu/log.h>
+#include <tinu/clist.h>
 
-typedef enum
-{
-  STAT_VERB_NONE = 0,
-  STAT_VERB_SUMMARY,
-  STAT_VERB_SUITES,
-  STAT_VERB_FULL,
-  STAT_VERB_VERBOSE,
-} StatisticsVerbosity;
+#include <tinu/report-standard.h>
+#include <tinu/report-program.h>
 
-//static const TestContextFuncs g_main_test_context_funcs;
 static GOptionEntry g_main_opt_entries[];
 
 static gboolean g_main_test_context_init = FALSE;
@@ -69,12 +62,21 @@ static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 static const gchar *g_opt_suite = NULL;
 static const gchar *g_opt_file = NULL;
 
+static const gchar *g_opt_report = "stderr";
+
 #ifdef COREDUMPER_ENABLED
 static const gchar *g_opt_core_dir = "/tmp";
 #endif
 
 /* Runtime name */
 const gchar *g_runtime_name = NULL;
+
+/* Reporting modules defined in the tinu framework */
+extern const ReportModule g_report_stderr_module;
+extern const ReportModule g_report_progam_module;
+
+/* Report module structure */
+static CList *g_report_modules = NULL;
 
 /* Error handling */
 static inline GQuark
@@ -145,7 +147,13 @@ _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
 
   return TRUE;
 }
-
+gboolean
+_tinu_opt_report_null(const gchar *opt G_GNUC_UNUSED, const gchar *value G_GNUC_UNUSED,
+  gpointer data, GError **error)
+{
+  g_opt_report = NULL;
+  return TRUE;
+}
 
 static GOptionEntry g_main_opt_entries[] = {
   { "fancy-log", 'c', 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_fancy,
@@ -169,6 +177,10 @@ static GOptionEntry g_main_opt_entries[] = {
     "Don't handle signals from test", NULL },
   { "suite", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_suite,
     "Run only the given suite", NULL },
+  { "report", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_report,
+    "Use the given report module (default: stderr)", NULL },
+  { "no-report", 0, G_OPTION_ARG_NONE, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_report_null,
+    "Disable reporting", NULL },
 #ifdef COREDUMPER_ENABLED
   { "core-dir", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_core_dir,
     "Set target core directory (default: /tmp)" },
@@ -193,17 +205,32 @@ _tinu_version()
   exit(1);
 }
 
-gboolean
+static gboolean
 _tinu_options(int *argc, char **argv[])
 {
   GError *error = NULL;
   GOptionContext *context;
-  gpointer watch;
 
-  watch = log_register_message_handler(msg_stderr_handler, LOG_ERR, LOGMSG_PROPAGATE);
+  CListIterator *iter;
+  ReportModule *mod;
+  char description[4096];
+  GOptionGroup *grp;
 
   context = g_option_context_new("Test runner");
   g_option_context_add_main_entries(context, g_main_opt_entries, NULL);
+
+  for (iter = clist_iter_new(g_report_modules); clist_iter_next(iter); )
+    {
+      mod = (ReportModule *)clist_iter_data(iter);
+
+      snprintf(description, sizeof(description), "`%s' reporting module", mod->m_name);
+      grp = g_option_group_new(mod->m_name, description, description, NULL, NULL);
+      if (mod->m_options)
+        g_option_group_add_entries(grp, mod->m_options);
+      g_option_context_add_group(context, grp);
+    }
+  clist_iter_done(iter);
+
   if (!g_option_context_parse(context, argc, argv, &error))
     {
       log_error("Option parsing failed",
@@ -213,178 +240,28 @@ _tinu_options(int *argc, char **argv[])
       g_error_free(error);
       return FALSE;
     }
-
-  log_unregister_message_handler(watch);
   return TRUE;
 }
 
-void
-_tinu_show_summary(TestStatistics *stat)
+static ReportModule *
+_tinu_test_find_module(const gchar *name)
 {
-  if (g_opt_fancy)
+  CListIterator *iter;
+  ReportModule *mod;
+
+  for (iter = clist_iter_new(g_report_modules); clist_iter_next(iter); )
     {
-      if (stat->m_sigsegv)
+      mod = (ReportModule *)clist_iter_data(iter);
+
+      if (!strcmp(mod->m_name, name))
         {
-          fprintf(stderr, "Summary: "
-                          "\033[1;32mpassed: %d\033[0m; "
-                          "\033[1;31mfailed: %d\033[0m; "
-                          "\033[41m\033[1;37msegmentation faults: %d\033[0m\n",
-                  stat->m_passed, stat->m_failed, stat->m_sigsegv);
-        }
-      else
-        {
-          fprintf(stderr, "Summary: "
-                          "\033[1;32mpassed: %d\033[0m; "
-                          "\033[1;31mfailed: %d\033[0m\n",
-                  stat->m_passed, stat->m_failed);
+          clist_iter_done(iter);
+          return mod;
         }
     }
-  else
-    fprintf(stderr, "Summary: passed: %d; failed: %d; segmentation faults: %d\n",
-            stat->m_passed, stat->m_failed, stat->m_sigsegv);
-}
 
-void
-_tinu_show_suite(TestSuite *suite)
-{
-  if (g_opt_fancy)
-    {
-      fprintf(stderr, "Suite   \033[35m%-*s\033[0m %s\n",
-              30, suite->m_name,
-              suite->m_passed ? "\033[32mpassed\033[0m" : "\033[31mfailed\033[0m");
-    }
-  else
-    {
-      fprintf(stderr, "Suite   %-*s %s\n",
-              30, suite->m_name,
-              suite->m_passed ? "passed" : "failed");
-    }
-}
-
-void
-_tinu_show_case(TestCase *test)
-{
-  int len;
-
-  if (g_opt_fancy)
-    {
-      len = fprintf(stderr, "   Case \033[35m%-*s\033[0m ", 33, test->m_name);
-
-      switch (test->m_result)
-        {
-          case TEST_PASSED :
-            fprintf(stderr, "\033[32mpassed\033[0m\n");
-            break;
-
-          case TEST_FAILED :
-            fprintf(stderr, "\033[31mfailed\033[0m");
-#ifdef COREDUMPER_ENABLED
-            fprintf(stderr, " (core: %s)\n",
-              core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
-#else
-            fprintf(stderr, "\n");
-#endif
-            break;
-
-          case TEST_SEGFAULT :
-            fprintf(stderr, "\033[41m\033[1;37msegfault\033[0m");
-#ifdef COREDUMPER_ENABLED
-            fprintf(stderr, " (core: %s)\n",
-              core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
-#else
-            fprintf(stderr, "\n");
-#endif
-            break;
-
-          case TEST_INTERNAL :
-            fprintf(stderr, "\033[41m\033[1;37minternal error\033[0m\n");
-            break;
-        }
-
-    }
-  else
-    {
-      fprintf(stderr, "   Case %-*s ", 33, test->m_name);
-
-      switch (test->m_result)
-        {
-          case TEST_PASSED :
-            fprintf(stderr, "passed\n");
-            break;
-
-          case TEST_FAILED :
-            fprintf(stderr, "failed\n");
-#ifdef COREDUMPER_ENABLED
-            fprintf(stderr, " (core: %s)\n",
-              core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
-#else
-            fprintf(stderr, "\n");
-#endif
-            break;
-
-          case TEST_SEGFAULT :
-            fprintf(stderr, "segfault");
-#ifdef COREDUMPER_ENABLED
-            fprintf(stderr, " (core: %s)\n",
-              core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
-#else
-            fprintf(stderr, "\n");
-#endif
-
-            break;
-
-          case TEST_INTERNAL :
-            fprintf(stderr, "internal error\n");
-            break;
-        }
-    }
-}
-
-void
-_tinu_show_results()
-{
-  gint i, j;
-
-  TestSuite *suite;
-
-  if (g_opt_stat_verb == STAT_VERB_NONE)
-    return;
-
-  _tinu_show_summary(&g_main_test_context.m_statistics);
-
-  if (g_opt_stat_verb == STAT_VERB_SUMMARY)
-    return;
-
-  for (i = 0; i < g_main_test_context.m_suites->len; i++)
-    {
-      suite = g_ptr_array_index(g_main_test_context.m_suites, i);
-
-      if (g_opt_suite && strcmp(g_opt_suite, suite->m_name) != 0)
-        continue;
-
-      _tinu_show_suite(suite);
-
-      if (g_opt_stat_verb > STAT_VERB_SUITES)
-        {
-          for (j = 0; j < suite->m_tests->len; j++)
-            _tinu_show_case(g_ptr_array_index(suite->m_tests, j));
-          fprintf(stderr, "\n");
-        }
-
-      if (g_opt_suite)
-        break;
-    }
-
-  if (g_opt_stat_verb <= STAT_VERB_FULL)
-    return;
-
-  fprintf(stderr, "Messages received:\n");
-  for (i = LOG_CRIT; i <= LOG_DEBUG; i++)
-    {
-      fprintf(stderr, "    %-*s %*d\n",
-              25, msg_format_priority(i),
-              10, g_main_test_context.m_statistics.m_messages[i]);
-    }
+  clist_iter_done(iter);
+  return NULL;
 }
 
 int
@@ -394,10 +271,16 @@ tinu_main(int *argc, char **argv[])
   gpointer handle = NULL;
   gboolean res;
   gchar *basename = g_path_get_basename(**argv);
+  ReportModule *report = NULL;
+  TestStatistics *stat = NULL;
+  gpointer init_watch = log_register_message_handler(msg_stderr_handler, LOG_ERR, LOGMSG_PROPAGATE);
 
   g_runtime_name = (*argv)[0];
 
   signal(SIGSEGV, _tinu_signal_handler);
+
+  tinu_report_add(&g_report_stderr_module);
+  tinu_report_add(&g_report_progam_module);
 
   if (!_tinu_options(argc, argv))
     return 1;
@@ -405,7 +288,15 @@ tinu_main(int *argc, char **argv[])
   if (g_opt_version)
     _tinu_version();
 
-  atexit(log_clear);
+  if (g_opt_report && NULL == (report = _tinu_test_find_module(g_opt_report)))
+    {
+      log_error("Could not find given report module",
+                msg_tag_str("name", g_opt_report), NULL);
+      return 1;
+    }
+
+  if (report->m_check && !report->m_check(g_opt_stat_verb, g_opt_fancy))
+    return 1;
 
   if (!g_opt_silent)
     {
@@ -414,6 +305,8 @@ tinu_main(int *argc, char **argv[])
       else
         log_register_message_handler(msg_stderr_handler, g_opt_priority, LOGMSG_PROPAGATE);
     }
+  atexit(log_clear);
+  log_unregister_message_handler(init_watch);
 
   if (g_opt_syslog)
     {
@@ -436,6 +329,11 @@ tinu_main(int *argc, char **argv[])
 #ifdef COREDUMPER_ENABLED
   g_main_test_context.m_core_dir = g_opt_core_dir;
 #endif
+  if (report && g_opt_stat_verb > STAT_VERB_NONE)
+    {
+      stat = stat_new(&g_main_test_context);
+      stat_start(stat);
+    }
 
   log_debug("Running tests", NULL);
   if (g_opt_suite)
@@ -443,7 +341,13 @@ tinu_main(int *argc, char **argv[])
   else
     res = tinu_test_all_run(&g_main_test_context);
 
-  _tinu_show_results();
+  if (report)
+    {
+      stat_stop(stat);
+      report->m_handle(stat, g_opt_stat_verb, g_opt_fancy);
+
+      stat_destroy(stat);
+    }
 
   test_context_destroy(&g_main_test_context);
   g_free(basename);
@@ -454,6 +358,7 @@ tinu_main(int *argc, char **argv[])
       fclose(log);
     }
 
+  clist_destroy(g_report_modules, NULL);
   return res ? 0 : 1;
 }
 
@@ -472,4 +377,10 @@ tinu_test_add(const gchar *suite_name,
     }
 
   test_add((TestContext *)&g_main_test_context, suite_name, test_name, setup, cleanup, func);
+}
+
+void
+tinu_report_add(const ReportModule *module)
+{
+  g_report_modules = clist_append(g_report_modules, (gpointer)module);
 }

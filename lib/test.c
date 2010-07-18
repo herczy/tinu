@@ -48,6 +48,8 @@ typedef void (*sighandler_t)(int);
 #include <coredumper.h>
 #endif
 
+#include <glib/gtestutils.h>
+
 static gint g_signal = 0;
 
 static sighandler_t g_sigsegv_handler = NULL;
@@ -93,6 +95,19 @@ _test_run_hooks(TestHookID hook_id, ...)
   clist_iter_done(iter);
 }
 
+static gboolean
+_test_validate_name(const gchar *name)
+{
+  gint i;
+
+  for (i = 0; name[i]; i++)
+    {
+      if (name[i] == '.' || name[i] == '=')
+        return FALSE;
+    }
+  return TRUE;
+}
+
 void
 _signal_handler(int signo)
 {
@@ -136,14 +151,6 @@ _signal_off()
   signal(SIGABRT, g_sigabrt_handler);
 }
 
-gboolean
-_test_message_counter(Message *msg, gpointer user_data)
-{
-  TestContext *self = (TestContext *)user_data;
-  self->m_statistics.m_messages[msg->m_priority]++;
-  return TRUE;
-}
-
 void
 _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
 {
@@ -162,15 +169,12 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
     test->m_cleanup(ctx);
 
   *result = TEST_PASSED;
-  _test_run_hooks(TEST_HOOK_AFTER_TEST, test, *result);
 }
 
 TestCaseResult
 _test_case_run_single_test(TestContext *self, TestCase *test)
 {
   TestCaseResult res = TEST_PASSED;
-  gpointer log_handler = log_register_message_handler(_test_message_counter,
-                                                      LOG_DEBUG, (gpointer)self);
 
   GHashTable *leak_table = NULL;
   gpointer leak_handler = (self->m_leakwatch ? tinu_leakwatch_simple(&leak_table) : NULL);
@@ -214,16 +218,12 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
     {
       if (res == TEST_PASSED)
         {
-          self->m_statistics.m_passed++;
-
           log_notice("Test case run successfull",
                      msg_tag_str("case", test->m_name),
                      msg_tag_str("suite", test->m_suite->m_name), NULL);
         }
       else
         {
-          self->m_statistics.m_failed++;
-
           log_warn("Test case run failed",
                    msg_tag_str("case", test->m_name),
                    msg_tag_str("suite", test->m_suite->m_name), NULL);
@@ -231,23 +231,13 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
     }
   else
     {
-      if (g_signal == SIGSEGV)
-        {
-          res = TEST_SEGFAULT;
-          self->m_statistics.m_sigsegv++;
-        }
-      else
-        {
-          res = TEST_FAILED;
-          self->m_statistics.m_failed++;
-        }
+      res = (g_signal == SIGSEGV ? TEST_SEGFAULT : TEST_FAILED);
 
       log_format(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
                  msg_tag_int("signal", g_signal),
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
 
-      _test_run_hooks(TEST_HOOK_AFTER_TEST, test, res);
     }
 
     if (leak_handler)
@@ -258,14 +248,10 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
         g_hash_table_destroy(leak_table);
       }
 
-  test->m_result = res;
-
-  log_unregister_message_handler(log_handler);
+  _test_run_hooks(TEST_HOOK_AFTER_TEST, test, res);
   return res;
 
 internal_error:
-  test->m_result = TEST_INTERNAL;
-  self->m_statistics.m_failed++;
   return TEST_INTERNAL;
 }
 
@@ -285,8 +271,6 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   log_format(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),
             msg_tag_bool("result", res), NULL);
-
-  suite->m_passed = res;
 
   _test_run_hooks(TEST_HOOK_AFTER_SUITE, suite, res);
   return res;
@@ -355,8 +339,25 @@ test_add(TestContext *self,
          TestCleanup cleanup,
          TestFunction func)
 {
-  TestSuite *suite = _test_suite_lookup(self, suite_name, TRUE);
-  TestCase *res = _test_lookup_case(suite, test_name);
+  TestSuite *suite;
+  TestCase *res;
+
+  if (!_test_validate_name(suite_name))
+    {
+      log_crit("Invalid suite name (names cannot contain '.' and '=' characters)",
+               msg_tag_str("name", suite_name), NULL);
+      g_assert(0);
+    }
+
+  if (!_test_validate_name(test_name))
+    {
+      log_crit("Invalid test case name (names cannot contain '.' and '=' characters)",
+               msg_tag_str("name", test_name), NULL);
+      g_assert(0);
+    }
+
+  suite = _test_suite_lookup(self, suite_name, TRUE);
+  res = _test_lookup_case(suite, test_name);
 
   if (res)
     {
@@ -482,7 +483,6 @@ gboolean
 tinu_test_suite_run(TestContext *self, const gchar *suite_name)
 {
   TestSuite *suite = _test_suite_lookup(self, suite_name, FALSE);
-  gboolean res;
 
   if (!suite)
     {

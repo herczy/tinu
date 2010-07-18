@@ -10,10 +10,23 @@ include_HEADERS = tinu/backtrace.h \
                   tinu/main.h \
                   tinu/message.h \
                   tinu/test.h \
-                  tinu/utils.h
+                  tinu/utils.h \
+                  tinu/clist.h \
+                  tinu/statistics.h \
+                  tinu/reporting.h
 
 lib_LTLIBRARIES = libtinu.la
-libtinu_la_SOURCES = backtrace.c leakwatch.c log.c main.c message.c  test.c tinu tinu.h tinu.pc.in utils.c
+libtinu_la_SOURCES = backtrace.c \
+                     leakwatch.c \
+                     log.c \
+                     main.c \
+                     message.c \
+                     test.c \
+                     utils.c \
+                     clist.c \
+                     statistics.c \
+                     report-standard.c \
+                     report-program.c
 libtinu_la_CFLAGS = -Itinu -Wall @LIBGLIB_CFLAGS@ @CFLAGS@
 libtinu_la_LDFLAGS = -version-info 0:0:0 @LIBGLIB_LIBS@ @LDFLAGS@
 

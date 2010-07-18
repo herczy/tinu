@@ -43,6 +43,7 @@
 #include <glib/garray.h>
 
 #include <tinu/log.h>
+#include <tinu/clist.h>
 
 __BEGIN_DECLS
 
@@ -133,9 +134,6 @@ struct _TestCase
   TestCleanup     m_cleanup;
   /** Test function. This should be the "body" of the test */
   TestFunction    m_test;
-
-  /** After the test ran, this will continue the result. */
-  TestCaseResult  m_result;
 };
 
 /** @brief Test suite
@@ -153,32 +151,22 @@ struct _TestSuite
 
   /** Contains the individual test cases */
   GPtrArray      *m_tests;
-
-  /** If all test resulted in TEST_PASSED, the suite passes. If
-   * even one test case fails in any way, the suite fails too.
-   */
-  gboolean        m_passed;
 };
 
-/** @brief Test statistics
+/** @brief Hook entry
  *
- * Contains statistical information about the test cases and
- * emitted messages.
+ * This entry contains a hook callback and a user data to pass along
  *
- * @note Do not use directly. It may change at any time.
+ * @note Do not use directly. It may change at any time
  */
-typedef struct _TestStatistics
+typedef struct _TestHookEntry
 {
-  /** Number of emitted messages by priority */
-  guint32       m_messages[LOG_DEBUG + 1];
-  /** Number of segmentation faults */
-  guint32       m_sigsegv;
+  /** Hook callback */
+  TestHookCb      m_hook;
 
-  /** Number of tests passed */
-  guint32       m_passed;
-  /** Number of tests failed */
-  guint32       m_failed;
-} TestStatistics;
+  /** Hook callback user data */
+  gpointer        m_user_data;
+} TestHookEntry;
 
 /** @brief Test context
  *
@@ -191,9 +179,6 @@ struct _TestContext
 {
   /** List of suites */
   GPtrArray      *m_suites;
-
-  /** Statistics about the test */
-  TestStatistics  m_statistics;
 
   /** Enables/disables signal handling */
   gboolean        m_sighandle;
