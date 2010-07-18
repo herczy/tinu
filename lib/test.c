@@ -71,27 +71,26 @@ typedef struct _TestHookItem
   gpointer        m_user_data;
 } TestHookItem;
 
-static gboolean
+static void
 _test_run_hooks(TestHookID hook_id, ...)
 {
   va_list vl;
-  gint i;
-  gboolean ret;
-  TestHookItem *act;
+  CListIterator *iter;
+  TestHookEntry *entry;
 
-  for (i = 0; i < g_test_context_current->m_hooks->len; i++)
+  g_assert (hook_id < TEST_HOOK_MAX);
+  for (iter = clist_iter_new(g_test_context_current->m_hooks[hook_id]); clist_iter_next(iter); )
     {
-      act = &g_array_index(g_test_context_current->m_hooks, TestHookItem, i);
+      entry = (TestHookEntry *)clist_iter_data(iter);
+
+      if (!entry->m_hook)
+        continue;
 
       va_start(vl, hook_id);
-      ret = act->m_callback(hook_id, g_test_context_current, act->m_user_data, vl);
+      entry->m_hook(hook_id, g_test_context_current, entry->m_user_data, vl);
       va_end(vl);
-
-      if (!ret)
-        break;
     }
-
-  return ret;
+  clist_iter_done(iter);
 }
 
 void
@@ -338,14 +337,14 @@ void
 test_context_init(TestContext *self)
 {
   self->m_suites = g_ptr_array_new();
-  self->m_hooks = g_array_new(FALSE, FALSE, sizeof(TestHookItem));
+  memset(self->m_hooks, 0, sizeof(self->m_hooks));
 }
 
 void
 test_context_destroy(TestContext *self)
 {
   g_ptr_array_free(self->m_suites, TRUE);
-  g_array_free(self->m_hooks, TRUE);
+  test_unregister_hook(self, TEST_HOOK_ALL, NULL, NULL);
 }
 
 void
@@ -386,13 +385,82 @@ test_add(TestContext *self,
 }
 
 void
-test_register_hook(TestContext *self, TestHookCb hook, gpointer user_data)
+test_register_hook(TestContext *self, TestHookID hook_id, TestHookCb hook, gpointer user_data)
 {
-  TestHookItem item = {
-    .m_callback = hook,
-    .m_user_data = user_data
-  };
-  g_array_append_val(self->m_hooks, item);
+  gint i;
+  TestHookEntry *entry;
+
+  if (hook_id != TEST_HOOK_ALL)
+    {
+      g_assert (hook_id < TEST_HOOK_MAX);
+
+      entry = g_new0(TestHookEntry, 1);
+      entry->m_hook = hook;
+      entry->m_user_data = user_data;
+      self->m_hooks[hook_id] = clist_append(self->m_hooks[hook_id], entry);
+    }
+  else
+    {
+      for (i = 0; i < TEST_HOOK_MAX; i++)
+        test_register_hook(self, i, hook, user_data);
+    }
+}
+
+void
+test_register_multiple_hooks(TestContext *self, TestHookCb *hooks, gpointer user_data)
+{
+  gint id;
+
+  for (id = 0; id < TEST_HOOK_MAX; id++)
+    {
+      if (hooks[id])
+        test_register_hook(self, id, hooks[id], user_data);
+    }
+}
+
+void
+test_unregister_hook(TestContext *self, TestHookID hook_id, TestHookCb hook, gpointer user_data)
+{
+  CListIterator *iter;
+  TestHookEntry *entry;
+  gint i;
+
+  if (hook_id == TEST_HOOK_ALL)
+    {
+      for (i = 0; i < TEST_HOOK_MAX; i++)
+        test_unregister_hook(self, i, NULL, NULL);
+      return;
+    }
+
+  g_assert (hook_id < TEST_HOOK_MAX);
+
+  if (hook == NULL)
+    {
+      clist_destroy(self->m_hooks[hook_id], g_free);
+      self->m_hooks[hook_id] = NULL;
+      return;
+    }
+
+  for (iter = clist_iter_new(self->m_hooks[hook_id]); clist_iter_next(iter); )
+    {
+      entry = (TestHookEntry *)clist_iter_data(iter);
+      if (hook == entry->m_hook && (!user_data || entry->m_user_data == user_data))
+        clist_iter_remove(iter, g_free);
+    }
+  clist_iter_done(iter);
+  self->m_hooks[hook_id] = NULL;
+}
+
+void
+test_unregister_multiple_hooks(TestContext *self, TestHookCb *hooks, gpointer user_data)
+{
+  gint id;
+
+  for (id = 0; id < TEST_HOOK_MAX; id++)
+    {
+      if (hooks[id])
+        test_unregister_hook(self, id, hooks[id], user_data);
+    }
 }
 
 gboolean

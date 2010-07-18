@@ -70,6 +70,8 @@ typedef void (*TestFunction)(gpointer);
 
 /**
  * Signifies the result of a given test case and suite.
+ *
+ * @note Public because the TEST_HOOK_AFTER_TEST hook uses it as a parameter.
  */
 typedef enum
 {
@@ -86,7 +88,7 @@ typedef enum
 typedef enum
 {
   /** Hook indicating an assertion was evaluated */
-  TEST_HOOK_ASSERT,
+  TEST_HOOK_ASSERT = 0,
 
   /** Hook indicating a SIGABRT */
   TEST_HOOK_SIGNAL_ABORT,
@@ -101,9 +103,15 @@ typedef enum
   TEST_HOOK_BEFORE_SUITE,
   /** Hook indicating the ending of a suite execution */
   TEST_HOOK_AFTER_SUITE,
+
+  /** The last hook */
+  TEST_HOOK_MAX,
+
+  /** Used by register/unregister to indicate all hooks */
+  TEST_HOOK_ALL = 0xFFFF,
 } TestHookID;
 
-typedef gboolean (*TestHookCb)(TestHookID hook_id, TestContext *context, gpointer user_data, va_list vl);
+typedef void (*TestHookCb)(TestHookID hook_id, TestContext *context, gpointer user_data, va_list vl);
 
 /** @brief Individual test case
  *
@@ -198,7 +206,7 @@ struct _TestContext
   const gchar    *m_core_dir;
 
   /** Test hook callbacks */
-  GArray         *m_hooks;
+  CList          *m_hooks[TEST_HOOK_MAX];
 };
 
 /** @brief Initialize test context
@@ -233,13 +241,51 @@ void test_add(TestContext *self,
 
 /** @brief Register a hook in the test context
  * @param self Test context
+ * @param hook_id ID of hook to register (TEST_HOOK_ALL to register all hooks)
  * @param hook The hook callback function
  * @param user_data The hook callback user data
  *
  * Registers a hook callback which is called at different points during
  * the test/suite execution.
  */
-void test_register_hook(TestContext *self, TestHookCb hook, gpointer user_data);
+void test_register_hook(TestContext *self, TestHookID hook_id,
+  TestHookCb hook, gpointer user_data);
+
+/** @brief Register multiple hooks with the same user data
+ * @param self Test context
+ * @param hooks An array of hooks. Size should be TEST_HOOK_MAX.
+ *  NULL callbacks will not be registered
+ * @param user_data The hook callback user data
+ *
+ * Registers the hooks in the given list, like test_register_hook, but with multiple
+ * callbacks using the same user data. This is only a conveinence function.
+ *
+ * @note Use this for `hook' modules
+ */
+void test_register_multiple_hooks(TestContext *self, TestHookCb *hooks, gpointer user_data);
+
+/** @brief Unregister hook from the test context
+ * @param self Test context
+ * @param hook_id ID of hook to unregister (TEST_HOOK_ALL to unregister all hooks)
+ * @param hook The hook callback function to remove (NULL to remove all hooks)
+ * @param user_data The hook callback user data to remove (NULL to remove a specific callback)
+ *
+ * Unregisters a hook from the test context.
+ */
+void test_unregister_hook(TestContext *self, TestHookID hook_id, TestHookCb hook, gpointer user_data);
+
+/** @brief Unregister multiple hooks with the same user data
+ * @param self Test context
+ * @param hooks An array of hooks. Size should be TEST_HOOK_MAX.
+ *  NULL callbacks will not be unregistered
+ * @param user_data The hook callback user data
+ *
+ * Unregisters the hooks in the given list, like test_unregister_hook, but with multiple
+ * callbacks using the same user data. This is only a conveinence function.
+ *
+ * @note Use this for `hook' modules
+ */
+void test_unregister_multiple_hooks(TestContext *self, TestHookCb *hooks, gpointer user_data);
 
 /** @brief Run all tests
  * @param self Test context
