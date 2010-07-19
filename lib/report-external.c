@@ -15,6 +15,7 @@ static const gchar *g_opt_program_name = NULL;
 static const gchar *g_opt_program_extra_opts = "";
 
 static const gchar *g_opt_filename = NULL;
+static FILE *g_opt_file = NULL;
 
 /* Globals */
 static gchar g_prg_prefix[4096];
@@ -155,10 +156,11 @@ test_report_file_check(StatisticsVerbosity verbosity, gboolean enable_colour)
       log_error("Missing destination name from file report", NULL);
       return FALSE;
     }
-  if (access(g_opt_filename, W_OK) == -1)
+  g_opt_file = fopen(g_opt_filename, "w");
+  if (!g_opt_file)
     {
       _errno = errno;
-      log_error("Cannot access file",
+      log_error("Cannot create file",
                 msg_tag_str("name", g_opt_filename),
                 msg_tag_int("code", _errno),
                 msg_tag_str("reason", strerror(_errno)), NULL);
@@ -170,17 +172,8 @@ test_report_file_check(StatisticsVerbosity verbosity, gboolean enable_colour)
 static void
 test_report_file(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour)
 {
-  FILE *file = fopen(g_opt_filename, "w");
-
-  if (!file)
-    {
-      log_crit("Could not open file for file report",
-               msg_tag_str("", g_opt_filename), NULL);
-      g_assert(0);
-    }
-
-  _test_report_put_file(file, stat);
-  fclose(file);
+  _test_report_put_file(g_opt_file, stat);
+  fclose(g_opt_file);
 }
 
 const GOptionEntry g_report_file_module_options[] = {
