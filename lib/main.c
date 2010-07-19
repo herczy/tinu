@@ -41,9 +41,6 @@
 #include <tinu/log.h>
 #include <tinu/clist.h>
 
-#include <tinu/report-standard.h>
-#include <tinu/report-program.h>
-
 static GOptionEntry g_main_opt_entries[];
 
 static gboolean g_main_test_context_init = FALSE;
