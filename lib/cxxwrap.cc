@@ -58,7 +58,7 @@ CxxBacktrace::~CxxBacktrace()
 }
 
 CxxBacktrace::Entry
-CxxBacktrace::at(int i) const
+CxxBacktrace::at(unsigned int i) const
 {
   if (i > depth())
     throw Exception("Index out of range");

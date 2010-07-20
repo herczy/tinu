@@ -77,7 +77,7 @@ public:
   inline guint32 depth() const
   { return backtrace_depth(m_obj); }
 
-  CxxBacktrace::Entry at(int i) const;
+  CxxBacktrace::Entry at(unsigned int i) const;
 
   inline const Backtrace *obj() const
   { return m_obj; }
