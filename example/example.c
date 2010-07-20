@@ -50,6 +50,27 @@ test_fail_1(gpointer context G_GNUC_UNUSED)
 }
 
 void
+test_fail_2(gpointer context G_GNUC_UNUSED)
+{
+  TINU_ASSERT_TRUE(0);
+  FATAL(TINU_ASSERT_TRUE(0));
+}
+
+void
+test_fail_3(gpointer context G_GNUC_UNUSED)
+{
+  TINU_ASSERT_TRUE(0);
+  TINU_ASSERT_TRUE(1);
+  TINU_ASSERT_TRUE(2);
+  TINU_ASSERT_TRUE(1);
+  TINU_ASSERT_TRUE(0);
+  TINU_ASSERT_TRUE(1);
+  TINU_ASSERT_TRUE(2);
+  TINU_ASSERT_TRUE(1);
+  TINU_ASSERT_TRUE(0);
+}
+
+void
 test_segv_1(gpointer context G_GNUC_UNUSED)
 {
   *(int *)NULL = 1;
@@ -70,7 +91,7 @@ test_leak_2_setup(void)
 void
 test_leak_2(gpointer context)
 {
-  TINU_ASSERT_TRUE(context);
+  FATAL(TINU_ASSERT_TRUE(context));
 }
 
 gpointer
@@ -121,6 +142,13 @@ main(int argc, char *argv[])
 
   /* If one of the asserts fail, the test will fail (also, the suite) */
   tinu_test_add("fail", "assert", NULL, NULL, test_fail_1);
+
+  /* If one of the critical asserts fail, the test will fail (also, the suite)
+   * and the test execution will be aborted. */
+  tinu_test_add("fail", "assert_fatal", NULL, NULL, test_fail_2);
+
+  /* All asserts are run, even after the fail, since none of them are critical */
+  tinu_test_add("fail", "assert_misc", NULL, NULL, test_fail_3);
 
   /* If the test case segfaults, the test will be flagged (also, it fails) */
   tinu_test_add("fail", "segfault", NULL, NULL, test_segv_1);

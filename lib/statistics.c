@@ -100,6 +100,8 @@ _stat_hook_case_end(TestHookID hook_id, TestContext *context, gpointer user_data
         self->m_passed++;
         break;
 
+      case TEST_ABORT :
+      case TEST_INTERNAL :
       case TEST_FAILED :
         self->m_failed++;
         break;

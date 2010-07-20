@@ -32,6 +32,7 @@
 #include <tinu/reporting.h>
 
 #include <glib/gstring.h>
+#include <glib/gtestutils.h>
 
 static gboolean g_opt_stderr = FALSE;
 static FILE *g_opt_print_out;
@@ -95,24 +96,22 @@ _std_report_show_suite(StatSuiteInfo *suite, StatisticsVerbosity verbosity, gboo
 void
 _std_report_show_case(StatTestInfo *test, StatisticsVerbosity verbosity, gboolean colour)
 {
+  const gchar *result_name = test_result_name(test->m_result);
   _report_printf("   Case ", COL_ENTRY("%-*s"), NULL, 33, test->m_test->m_name);
 
   switch (test->m_result)
     {
       case TEST_PASSED :
-        _report_printf(COL_OK("passed"), NULL);
+        _report_printf(COL_OK("%s"), NULL, result_name);
         break;
 
       case TEST_FAILED :
-        _report_printf(COL_FAIL("failed"), NULL);
-#ifdef COREDUMPER_ENABLED
-        fprintf(stderr, " (core: %s)",
-          core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
-#endif
+        _report_printf(COL_FAIL("%s"), NULL, result_name);
         break;
 
       case TEST_SEGFAULT :
-        _report_printf(COL_FATAL("segfault"), NULL);
+      case TEST_ABORT :
+        _report_printf(COL_FATAL("%s"), NULL, result_name);
 #ifdef COREDUMPER_ENABLED
         fprintf(g_opt_print_out, " (core: %s)",
           core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
@@ -120,8 +119,11 @@ _std_report_show_case(StatTestInfo *test, StatisticsVerbosity verbosity, gboolea
         break;
 
       case TEST_INTERNAL :
-        _report_printf(COL_FATAL("internal error"));
+        _report_printf(COL_FATAL("%s"), NULL, result_name);
         break;
+
+      default :
+        g_assert_not_reached();
     }
 
   if (verbosity == STAT_VERB_VERBOSE)

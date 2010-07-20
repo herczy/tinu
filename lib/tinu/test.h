@@ -76,10 +76,15 @@ typedef void (*TestFunction)(gpointer);
  */
 typedef enum
 {
+  /** The test case hasn't been run yet.
+   * @note This is a strictly internal name that should never be the result. */
+  TEST_NONE = -1,
   /** The test case passed */
   TEST_PASSED = 0,
   /** The test case failed */
   TEST_FAILED,
+  /** The test case was aborted via a SIGABRT */
+  TEST_ABORT,
   /** The test case resulted in a segmentation fault */
   TEST_SEGFAULT,
   /** The test case failed because some internal error */
@@ -194,6 +199,13 @@ struct _TestContext
   CList          *m_hooks[TEST_HOOK_MAX];
 };
 
+/** @brief Get a user-friendly description for a TestCaseResult
+ * @param result The test case result
+ *
+ * Gets a user-friendly name for the test case result enum.
+ */
+const gchar *test_result_name(TestCaseResult result);
+
 /** @brief Initialize test context
  * @param self The initialized context
  *
@@ -298,6 +310,7 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
  * @param line The line where the assertion comes from 
  * @param tag0 First tag to add to any message or NULL if none are appended
  * @param ... Additional tags, NULL-terminated
+ * @return Same value as of condition
  *
  * Before this function came into effect all assertions were macros,
  * but this proved to be inflexible when hooking came into the picture.
@@ -305,37 +318,68 @@ gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
  * @note Do not use directly! Use the macros. This way the API does not
  * change. This function can change.
  */
-void tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *condstr,
+gboolean tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *condstr,
   const gchar *file, const gchar *func, gint line, MessageTag *tag0, ...);
 
 /** @brief `TRUE' (or positive) Assertion
  * @param cond Assertion condition
  *
- * This macro checks the condition given and fails (that is, emits
- * a SIGABRT) if the condition is not met.
+ * This macro checks the condition given and if fails, the test case
+ * will also fail. But this assertion does not emit a SIGABRT signal. 
  */
-#define TINU_ASSERT_TRUE(cond) \
-  tinu_test_assert((cond), "positive", #cond, __FILE__, __PRETTY_FUNCTION__, __LINE__, NULL);
+#define TINU_ASSERT_TRUE(cond)                  \
+  tinu_test_assert(((cond) ? TRUE : FALSE),     \
+                   "positive",                  \
+                   #cond,                       \
+                   __FILE__,                    \
+                   __PRETTY_FUNCTION__,         \
+                   __LINE__,                    \
+                   NULL)
 
 /** @brief `FALSE' (or negative) Assertion
  * @param cond Assertion condition
  *
- * This macro checks the condition given and fails (that is, emits
- * a SIGABRT) if the condition is met.
+ * This macro checks the condition given and if fails, the test case
+ * will also fail. But this assertion does not emit a SIGABRT signal.
  */
-#define TINU_ASSERT_FALSE(cond) \
-  tinu_test_assert(!(cond), "negative", #cond, __FILE__, __PRETTY_FUNCTION__, __LINE__, NULL);
+#define TINU_ASSERT_FALSE(cond)                 \
+  tinu_test_assert(!(cond),                     \
+                   "negative",                  \
+                   #cond,                       \
+                   __FILE__,                    \
+                   __PRETTY_FUNCTION__,         \
+                   __LINE__,                    \
+                   NULL)
 
 /** @brief Check if the two strings are equal
  * @param str1 First string
  * @param str2 Second string
  *
- * This macro checks wheter two strings are equal or not
+ * This macro checks wheter two strings are equal or not. As with
+ * TINU_ASSERT_TRUE and TINU_ASSERT_FALSE this does not emit a
+ * SIGABRT signal.
  */
-#define TINU_ASSERT_STREQ(str1, str2) \
-  tinu_test_assert(strcmp((str1), (str2)) == 0, "string equality", "str1 == str2", \
-    __FILE__, __PRETTY_FUNCTION__, __LINE__, \
-    msg_tag_str("str1", str1), msg_tag_str("str2", str2), NULL);
+#define TINU_ASSERT_STREQ(str1, str2)           \
+  tinu_test_assert(strcmp((str1), (str2)) == 0, \
+                   "string equality",           \
+                   "str1 == str2",              \
+                   __FILE__,                    \
+                   __PRETTY_FUNCTION__,         \
+                   __LINE__,                    \
+                   msg_tag_str("str1", str1),   \
+                   msg_tag_str("str2", str2),   \
+                   NULL)
+
+/** @brief Make an assertion fatal
+ * @param assertion The assertion call, should be one of the above
+ *
+ * This macro is intended as a wrapper to be used with the previously
+ * mentioned macros, like 'FATAL(TINU_ASSERT_TRUE(cond))'. If the
+ * assertion fails, the test case will abort. This is usefull if the
+ * failure of the assertion means that the test case cleanup function
+ * should not be run (e.g. the test context became corrupt).
+ */
+#define FATAL(assertion) if (!(assertion)) { abort(); }
 
 __END_DECLS
 

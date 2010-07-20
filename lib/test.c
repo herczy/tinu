@@ -50,13 +50,12 @@ typedef void (*sighandler_t)(int);
 
 #include <glib/gtestutils.h>
 
-static gint g_signal = 0;
-
 static sighandler_t g_sigsegv_handler = NULL;
 static sighandler_t g_sigabrt_handler = NULL;
 
 static TestContext *g_test_context_current = NULL;
 static TestCase *g_test_case_current = NULL;
+static TestCaseResult g_test_case_current_result = TEST_NONE;
 
 ucontext_t g_test_ucontext;
 
@@ -125,12 +124,16 @@ _signal_handler(int signo)
   backtrace_dump_log(trace, "    ", LOG_ERR);
   backtrace_unreference(trace);
 
-  g_signal = signo;
-
-  if (g_signal == SIGABRT)
-    _test_run_hooks(TEST_HOOK_SIGNAL_ABORT);
+  if (signo == SIGABRT)
+    {
+      _test_run_hooks(TEST_HOOK_SIGNAL_ABORT);
+      g_test_case_current_result = TEST_ABORT;
+    }
   else
-    _test_run_hooks(TEST_HOOK_SIGNAL_SEGFAULT);
+    {
+      _test_run_hooks(TEST_HOOK_SIGNAL_SEGFAULT);
+      g_test_case_current_result = TEST_SEGFAULT;
+    }
 
   setcontext(g_test_ucontext.uc_link);
 }
@@ -138,8 +141,6 @@ _signal_handler(int signo)
 void
 _signal_on()
 {
-  g_signal = 0;
-
   g_sigsegv_handler = signal(SIGSEGV, _signal_handler);
   g_sigabrt_handler = signal(SIGABRT, _signal_handler);
 }
@@ -152,7 +153,7 @@ _signal_off()
 }
 
 void
-_test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
+_test_case_run_intern(TestContext *self, TestCase *test)
 {
   gpointer ctx = NULL;
 
@@ -168,20 +169,21 @@ _test_case_run_intern(TestContext *self, TestCase *test, TestCaseResult *result)
   if (test->m_cleanup)
     test->m_cleanup(ctx);
 
-  *result = TEST_PASSED;
+  if (g_test_case_current_result == TEST_NONE)
+    g_test_case_current_result = TEST_PASSED;
 }
 
 TestCaseResult
 _test_case_run_single_test(TestContext *self, TestCase *test)
 {
-  TestCaseResult res = TEST_PASSED;
-
   GHashTable *leak_table = NULL;
   gpointer leak_handler = (self->m_leakwatch ? tinu_leakwatch_simple(&leak_table) : NULL);
 
   gpointer stack = g_malloc0(TEST_CTX_STACK_SIZE);
 
   ucontext_t main_ctx;
+
+  g_test_case_current_result = TEST_NONE;
 
   if (self->m_sighandle)
     {
@@ -190,18 +192,20 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
       if (getcontext(&g_test_ucontext) == -1)
         {
           log_error("Cannot get main context", msg_tag_errno(), NULL);
-          goto internal_error;
+          g_test_case_current_result = TEST_INTERNAL;
+          goto test_case_run_done;
         }
 
       g_test_ucontext.uc_stack.ss_sp = stack;
       g_test_ucontext.uc_stack.ss_size = TEST_CTX_STACK_SIZE;
       g_test_ucontext.uc_link = &main_ctx;
-      makecontext(&g_test_ucontext, (void (*)())(&_test_case_run_intern), 3, self, test, &res);
+      makecontext(&g_test_ucontext, (void (*)())(&_test_case_run_intern), 2, self, test);
     
       if (swapcontext(&main_ctx, &g_test_ucontext) == -1)
         {
           log_error("Cannot change context", msg_tag_errno(), NULL);
-          goto internal_error;
+          g_test_case_current_result = TEST_INTERNAL;
+          goto test_case_run_done;
         }
     
       g_free(stack);
@@ -209,50 +213,55 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
       _signal_off();
     }
   else
-    {
-      g_signal = 0;
-      _test_case_run_intern(self, test, &res);
-    }
+    _test_case_run_intern(self, test);
 
-  if (g_signal == 0)
+test_case_run_done:
+  switch (g_test_case_current_result)
     {
-      if (res == TEST_PASSED)
-        {
-          log_notice("Test case run successfull",
-                     msg_tag_str("case", test->m_name),
-                     msg_tag_str("suite", test->m_suite->m_name), NULL);
-        }
-      else
-        {
-          log_warn("Test case run failed",
+      case TEST_PASSED :
+        log_notice("Test case run successfull",
                    msg_tag_str("case", test->m_name),
                    msg_tag_str("suite", test->m_suite->m_name), NULL);
-        }
-    }
-  else
-    {
-      res = (g_signal == SIGSEGV ? TEST_SEGFAULT : TEST_FAILED);
+        break;
 
-      log_format(g_signal == SIGABRT ? LOG_WARNING : LOG_ERR, "Test case run returned with signal",
-                 msg_tag_int("signal", g_signal),
+      case TEST_FAILED :
+        log_warn("Test case run failed",
                  msg_tag_str("case", test->m_name),
                  msg_tag_str("suite", test->m_suite->m_name), NULL);
+        break;
 
+      case TEST_ABORT :
+        log_error("Test case run failed abruptly",
+                 msg_tag_str("case", test->m_name),
+                 msg_tag_str("suite", test->m_suite->m_name), NULL);
+        break;
+
+      case TEST_SEGFAULT :
+        log_error("Test case run produced a segmentation fault",
+                 msg_tag_str("case", test->m_name),
+                 msg_tag_str("suite", test->m_suite->m_name), NULL);
+        break;
+
+      case TEST_INTERNAL :
+        log_crit("Test case run failed due to an internal error",
+                 msg_tag_str("case", test->m_name),
+                 msg_tag_str("suite", test->m_suite->m_name), NULL);
+        break;
+
+      default :
+        g_assert_not_reached();
     }
 
-    if (leak_handler)
-      {
-        tinu_unregister_watch(leak_handler);
-        if (res == TEST_PASSED)
-          tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
-        g_hash_table_destroy(leak_table);
-      }
+  if (leak_handler)
+    {
+      tinu_unregister_watch(leak_handler);
+      if (g_test_case_current_result == TEST_PASSED)
+        tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
+      g_hash_table_destroy(leak_table);
+    }
 
-  _test_run_hooks(TEST_HOOK_AFTER_TEST, test, res);
-  return res;
-
-internal_error:
-  return TEST_INTERNAL;
+  _test_run_hooks(TEST_HOOK_AFTER_TEST, test, g_test_case_current_result);
+  return g_test_case_current_result;
 }
 
 gboolean
@@ -315,6 +324,21 @@ _test_lookup_case(TestSuite *suite, const gchar *test)
     }
 
   return NULL;
+}
+
+const gchar *
+test_result_name(TestCaseResult result)
+{
+  static const gchar *names[] = {
+    [TEST_PASSED]       = "passed",
+    [TEST_FAILED]       = "failed",
+    [TEST_ABORT]        = "aborted",
+    [TEST_SEGFAULT]     = "segfault",
+    [TEST_INTERNAL]     = "internal error",
+  };
+
+  g_assert (result > TEST_NONE && result <= TEST_INTERNAL);
+  return names[result];
 }
 
 void
@@ -493,7 +517,7 @@ tinu_test_suite_run(TestContext *self, const gchar *suite_name)
   return _test_suite_run(self, suite);
 }
 
-void
+gboolean
 tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *condstr,
   const gchar *file, const gchar *func, gint line, MessageTag *tag0, ...)
 {
@@ -501,6 +525,9 @@ tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *cond
   Message *msg;
 
   _test_run_hooks(TEST_HOOK_ASSERT, condition, file, func, line);
+
+  if (!condition)
+    g_test_case_current_result = TEST_FAILED;
 
   if ((condition && g_log_max_priority >= LOG_DEBUG) ||
       (!condition && g_log_max_priority >= LOG_ERR))
@@ -524,6 +551,5 @@ tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *cond
       log_message(msg, TRUE);
     }
 
-  if (!condition)
-    abort();
+  return condition;
 }
