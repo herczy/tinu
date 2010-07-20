@@ -54,7 +54,7 @@ CList *clist_append(CList *self, gpointer data);
 CList *clist_prepend(CList *self, gpointer data);
 CList *clist_remove(CList *self, CListDataDestroyCb destroy);
 
-gboolean clist_foreach(CList *self, CListForeachCb list, gpointer user_data);
+gboolean clist_foreach(CList *self, CListForeachCb list_cb, gpointer user_data);
 
 CListIterator *clist_iter_new(CList *list);
 void clist_iter_done(CListIterator *iter);

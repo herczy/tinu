@@ -114,7 +114,7 @@ clist_remove(CList *self, CListDataDestroyCb destroy)
 }
 
 gboolean
-clist_foreach(CList *self, CListForeachCb list, gpointer user_data)
+clist_foreach(CList *self, CListForeachCb list_cb, gpointer user_data)
 {
   CList *act;
 
@@ -124,7 +124,7 @@ clist_foreach(CList *self, CListForeachCb list, gpointer user_data)
   act = self;
   do
     {
-      if (!list(act->m_data, user_data))
+      if (!list_cb(act->m_data, user_data))
         return FALSE;
       act = act->m_next;
     } while (act != self);
