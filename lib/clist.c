@@ -192,6 +192,7 @@ gpointer
 clist_iter_data(CListIterator *iter)
 {
   g_assert (iter->m_act);
+  g_assert (clist_iter_valid(iter));
   return iter->m_act->m_data;
 }
 
