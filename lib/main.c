@@ -59,7 +59,7 @@ static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 static const gchar *g_opt_suite = NULL;
 static const gchar *g_opt_file = NULL;
 
-static const gchar *g_opt_report = "stderr";
+static const gchar *g_opt_report = "print";
 
 #ifdef COREDUMPER_ENABLED
 static const gchar *g_opt_core_dir = "/tmp";
@@ -69,7 +69,7 @@ static const gchar *g_opt_core_dir = "/tmp";
 const gchar *g_runtime_name = NULL;
 
 /* Reporting modules defined in the tinu framework */
-extern const ReportModule g_report_stderr_module;
+extern const ReportModule g_report_print_module;
 extern const ReportModule g_report_progam_module;
 extern const ReportModule g_report_file_module;
 
@@ -176,7 +176,7 @@ static GOptionEntry g_main_opt_entries[] = {
   { "suite", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_suite,
     "Run only the given suite", NULL },
   { "report", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_report,
-    "Use the given report module (default: stderr)", NULL },
+    "Use the given report module (default: print)", NULL },
   { "no-report", 0, G_OPTION_ARG_NONE, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_report_null,
     "Disable reporting", NULL },
 #ifdef COREDUMPER_ENABLED
@@ -277,7 +277,7 @@ tinu_main(int *argc, char **argv[])
 
   signal(SIGSEGV, _tinu_signal_handler);
 
-  tinu_report_add(&g_report_stderr_module);
+  tinu_report_add(&g_report_print_module);
   tinu_report_add(&g_report_progam_module);
   tinu_report_add(&g_report_file_module);
 

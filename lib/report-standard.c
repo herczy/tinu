@@ -3,6 +3,9 @@
 
 #include <glib/gstring.h>
 
+static gboolean g_opt_stderr = FALSE;
+static FILE *g_opt_print_out;
+
 static void
 _report_vprintf(const gchar *fmt0, va_list vl)
 {
@@ -15,7 +18,7 @@ _report_vprintf(const gchar *fmt0, va_list vl)
       fmt_cur = va_arg(vl, const gchar *);
     }
 
-  vfprintf(stderr, fmt->str, vl);
+  vfprintf(g_opt_print_out, fmt->str, vl);
   g_string_free(fmt, TRUE);
 }
 
@@ -53,10 +56,10 @@ _std_report_show_suite(StatSuiteInfo *suite, StatisticsVerbosity verbosity, gboo
 
   if (verbosity == STAT_VERB_VERBOSE)
     {
-      fprintf(stderr, " assertions passed: %d/%d",
+      fprintf(g_opt_print_out, " assertions passed: %d/%d",
         suite->m_assertions_passed, suite->m_assertions);
     }
-  fprintf(stderr, "\n");
+  fprintf(g_opt_print_out, "\n");
 }
 
 void
@@ -81,7 +84,7 @@ _std_report_show_case(StatTestInfo *test, StatisticsVerbosity verbosity, gboolea
       case TEST_SEGFAULT :
         _report_printf(COL_FATAL("segfault"), NULL);
 #ifdef COREDUMPER_ENABLED
-        fprintf(stderr, " (core: %s)",
+        fprintf(g_opt_print_out, " (core: %s)",
           core_file_name(g_opt_core_dir, test->m_suite->m_name, test->m_name));
 #endif
         break;
@@ -93,14 +96,21 @@ _std_report_show_case(StatTestInfo *test, StatisticsVerbosity verbosity, gboolea
 
   if (verbosity == STAT_VERB_VERBOSE)
     {
-      fprintf(stderr, " assertions passed: %d/%d",
+      fprintf(g_opt_print_out, " assertions passed: %d/%d",
         test->m_assertions_passed, test->m_assertions);
     }
-  fprintf(stderr, "\n");
+  fprintf(g_opt_print_out, "\n");
+}
+
+static gboolean
+test_report_print_check(StatisticsVerbosity verbosity, gboolean enable_colour)
+{
+  g_opt_print_out = (g_opt_stderr ? stderr : stdout);
+  return TRUE;
 }
 
 static void
-test_report_stderr(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour)
+test_report_print(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour)
 {
   gint i, j;
 
@@ -121,25 +131,31 @@ test_report_stderr(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean
           for (j = 0; j < suite->m_test_info_list->len; j++)
             _std_report_show_case(&g_array_index(suite->m_test_info_list, StatTestInfo, j),
               verbosity, enable_colour);
-          fprintf(stderr, "\n");
+          fprintf(g_opt_print_out, "\n");
         }
     }
 
   if (verbosity <= STAT_VERB_FULL)
     return;
 
-  fprintf(stderr, "Messages received:\n");
+  fprintf(g_opt_print_out, "Messages received:\n");
   for (i = LOG_CRIT; i <= LOG_DEBUG; i++)
     {
-      fprintf(stderr, "    %-*s %*d\n",
+      fprintf(g_opt_print_out, "    %-*s %*d\n",
               25, msg_format_priority(i),
               10, stat->m_messages[i]);
     }
 }
 
-const ReportModule g_report_stderr_module = {
-  .m_name = "stderr",
-  .m_options = NULL,
-  .m_check = NULL,
-  .m_handle = &test_report_stderr
+const GOptionEntry g_report_print_module_options[] = {
+  { "stderr", 0, 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_stderr,
+    "Print messages to stderr instead of stderr", NULL },
+  { NULL }
+};
+
+const ReportModule g_report_print_module = {
+  .m_name = "print",
+  .m_options = g_report_print_module_options,
+  .m_check = &test_report_print_check,
+  .m_handle = &test_report_print
 };
