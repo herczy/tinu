@@ -40,6 +40,28 @@ struct _CListIterator
   CList              *m_act;
 };
 
+static gboolean
+_clist_iter_set_step(CListIterator *iter, CList *next)
+{
+  if (!iter->m_start)
+    return FALSE;
+
+  if (!iter->m_act)
+    {
+      iter->m_act = iter->m_start;
+      return TRUE;
+    }
+
+  if (next == iter->m_start)
+    {
+      iter->m_act = NULL;
+      return FALSE;
+    }
+
+  iter->m_act = next;
+  return TRUE;
+}
+
 void
 clist_destroy(CList *self, CListDataDestroyCb destroy)
 {
@@ -149,43 +171,19 @@ clist_iter_done(CListIterator *iter)
 gboolean
 clist_iter_valid(CListIterator *iter)
 {
-  return iter->m_start && (!iter->m_act || iter->m_act != iter->m_start);
+  return iter->m_start && iter->m_act;
 }
 
 gboolean
 clist_iter_next(CListIterator *iter)
 {
-  if (!iter->m_start)
-    return FALSE;
-
-  if (!iter->m_act)
-    {
-      iter->m_act = iter->m_start;
-      return TRUE;
-    }
-
-  g_assert (iter->m_act->m_next != NULL);
-
-  iter->m_act = iter->m_act->m_next;
-  return iter->m_act != iter->m_start;
+  return _clist_iter_set_step(iter, iter->m_act ? iter->m_act->m_next : NULL);
 }
 
 gboolean
 clist_iter_prev(CListIterator *iter)
 {
-  if (!iter->m_start)
-    return FALSE;
-
-  if (!iter->m_act)
-    {
-      iter->m_act = iter->m_start;
-      return TRUE;
-    }
-
-  g_assert (iter->m_act->m_prev != NULL);
-
-  iter->m_act = iter->m_act->m_prev;
-  return iter->m_act != iter->m_start;
+  return _clist_iter_set_step(iter, iter->m_act ? iter->m_act->m_prev : NULL);
 }
 
 gpointer
