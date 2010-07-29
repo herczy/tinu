@@ -42,7 +42,7 @@
 
 /* Options */
 static const gchar *g_opt_program_name = NULL;
-static const gchar *g_opt_program_extra_opts = "";
+static const gchar *g_opt_program_template = "cat %s";
 
 static const gchar *g_opt_filename = NULL;
 static FILE *g_opt_file = NULL;
@@ -72,6 +72,27 @@ _prg_report_print(FILE *file, const gchar *fmt, ...)
   va_end(vl);
 }
 
+static gchar *
+_prg_report_replace(const gchar *template, const gchar *argument)
+{
+  const gchar *pos0;
+  const gchar *pos;
+  GString *string;
+
+  string = g_string_sized_new(128);
+  pos = pos0 = template;
+  while (NULL != (pos = strstr(pos0, "%s")))
+    {
+      g_string_append_len(string, pos0, (gsize)(pos - pos0));
+      g_string_append(string, argument);
+      pos += 2;
+      pos0 = pos;
+    }
+
+  g_string_append(string, pos0);
+  return g_string_free(string, FALSE);
+}
+
 static FILE *
 _prg_report_passfile(gchar **name)
 {
@@ -88,11 +109,6 @@ _prg_report_passfile(gchar **name)
 static gboolean
 test_report_program_check(StatisticsVerbosity verbosity, gboolean enable_colour)
 {
-  if (!g_opt_program_name)
-    {
-      log_error("Missing program name from program report", NULL);
-      return FALSE;
-    }
   return TRUE;
 }
 
@@ -143,28 +159,39 @@ test_report_program(TestStatistics *stat, StatisticsVerbosity verbosity, gboolea
   gchar *fname;
   FILE *file = _prg_report_passfile(&fname);
 
-  gchar temp[4096];
+  gchar *prog;
 
   _test_report_put_file(file, stat);
 
   fclose(file);
 
-  snprintf(temp, sizeof(temp), "%s %s %s", g_opt_program_name, fname, g_opt_program_extra_opts);
+  if (g_opt_program_name)
+    {
+      prog = g_strdup_printf("%s %s", g_opt_program_name, fname);
+    }
+  else
+    {
+      prog = _prg_report_replace(g_opt_program_template, fname);
+    }
+
   log_debug("Running statistics",
             msg_tag_str("program", g_opt_program_name),
-            msg_tag_str("command", temp),
+            msg_tag_str("command", prog),
             NULL);
 
-  system(temp);
+  system(prog);
   unlink(fname);
   g_free(fname);
+  g_free(prog);
 }
 
 const GOptionEntry g_report_program_module_options[] = {
   { "program", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_program_name,
-    "The program to pass the statistics to", NULL },
-  { "program-opts", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_program_extra_opts,
-    "Extra arguments to pass the program", NULL },
+    "The program to pass the statistics to. The file name is passed as an argument to the program. "
+    "To pass extra options, use program-template.", NULL },
+  { "program-template", 'T', 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_program_template,
+    "Use a program template. All occurrences of %s are replaced with the filename "
+    "of the statistics (default 'cat %s')", NULL },
   { NULL }
 };
 
