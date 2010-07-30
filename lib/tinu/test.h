@@ -44,6 +44,7 @@
 
 #include <tinu/log.h>
 #include <tinu/clist.h>
+#include <tinu/names.h>
 
 __BEGIN_DECLS
 
@@ -380,6 +381,14 @@ gboolean tinu_test_assert(gboolean condition, const gchar *assert_type, const gc
  * should not be run (e.g. the test context became corrupt).
  */
 #define FATAL(assertion) if (!(assertion)) { abort(); }
+
+/** @brief Table containing the test case result IDs
+ */
+extern const NameTable TestCaseResult_names[];
+
+/** @brief Table containing the test hook IDs
+ */
+extern const NameTable TestHookID_names[];
 
 __END_DECLS
 

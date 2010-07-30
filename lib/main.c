@@ -40,6 +40,7 @@
 #include <tinu/main.h>
 #include <tinu/log.h>
 #include <tinu/clist.h>
+#include <tinu/reporting.h>
 
 static GOptionEntry g_main_opt_entries[];
 
@@ -116,27 +117,9 @@ gboolean
 _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
   gpointer data, GError **error)
 {
-  if (!strcasecmp(value, "none"))
-    {
-      g_opt_stat_verb = STAT_VERB_NONE;
-    }
-  else if (!strcasecmp(value, "summary"))
-    {
-      g_opt_stat_verb = STAT_VERB_SUMMARY;
-    }
-  else if (!strcasecmp(value, "suites"))
-    {
-      g_opt_stat_verb = STAT_VERB_SUITES;
-    }
-  else if (!strcasecmp(value, "full"))
-    {
-      g_opt_stat_verb = STAT_VERB_FULL;
-    }
-  else if (!strcasecmp(value, "verbose"))
-    {
-      g_opt_stat_verb = STAT_VERB_VERBOSE;
-    }
-  else
+  NameTableKey key = tinu_lookup_key(StatisticsVerbosity_names, value, NULL);
+
+  if (key == -1)
     {
       g_set_error(error, log_error_main(), MAIN_ERROR_OPTIONS,
                   "Unknown statistics verbosity `%s'", value);
@@ -145,6 +128,7 @@ _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
 
   return TRUE;
 }
+
 gboolean
 _tinu_opt_report_null(const gchar *opt G_GNUC_UNUSED, const gchar *value G_GNUC_UNUSED,
   gpointer data, GError **error)

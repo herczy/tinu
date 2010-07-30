@@ -77,13 +77,14 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" \
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libtinu_la_LIBADD =
 am__libtinu_la_SOURCES_DIST = backtrace.c leakwatch.c log.c main.c \
-	message.c test.c utils.c clist.c statistics.c \
-	report-standard.c report-external.c dwarf.c
+	message.c test.c utils.c clist.c statistics.c names.c \
+	reporting.c report-standard.c report-external.c dwarf.c
 @ELFDEBUG_TRUE@am__objects_1 = libtinu_la-dwarf.lo
 am_libtinu_la_OBJECTS = libtinu_la-backtrace.lo \
 	libtinu_la-leakwatch.lo libtinu_la-log.lo libtinu_la-main.lo \
 	libtinu_la-message.lo libtinu_la-test.lo libtinu_la-utils.lo \
 	libtinu_la-clist.lo libtinu_la-statistics.lo \
+	libtinu_la-names.lo libtinu_la-reporting.lo \
 	libtinu_la-report-standard.lo libtinu_la-report-external.lo \
 	$(am__objects_1)
 libtinu_la_OBJECTS = $(am_libtinu_la_OBJECTS)
@@ -126,7 +127,7 @@ DIST_SOURCES = $(am__libtinu_la_SOURCES_DIST) \
 am__include_HEADERS_DIST = tinu/backtrace.h tinu/config.h \
 	tinu/leakwatch.h tinu/log.h tinu/main.h tinu/message.h \
 	tinu/test.h tinu/utils.h tinu/clist.h tinu/statistics.h \
-	tinu/reporting.h tinu/dwarf.h tinu/cxxwrap.h
+	tinu/names.h tinu/reporting.h tinu/dwarf.h tinu/cxxwrap.h
 HEADERS = $(include_HEADERS) $(rootinclude_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -255,12 +256,12 @@ rootincludedir = $(prefix)/include
 rootinclude_HEADERS = tinu.h
 include_HEADERS = tinu/backtrace.h tinu/config.h tinu/leakwatch.h \
 	tinu/log.h tinu/main.h tinu/message.h tinu/test.h tinu/utils.h \
-	tinu/clist.h tinu/statistics.h tinu/reporting.h \
+	tinu/clist.h tinu/statistics.h tinu/names.h tinu/reporting.h \
 	$(am__append_2) $(am__append_6)
 lib_LTLIBRARIES = libtinu.la $(am__append_5)
 libtinu_la_SOURCES = backtrace.c leakwatch.c log.c main.c message.c \
-	test.c utils.c clist.c statistics.c report-standard.c \
-	report-external.c $(am__append_1)
+	test.c utils.c clist.c statistics.c names.c reporting.c \
+	report-standard.c report-external.c $(am__append_1)
 libtinu_la_CFLAGS = -Itinu -Wall @LIBGLIB_CFLAGS@ @CFLAGS@ \
 	$(am__append_3)
 libtinu_la_LDFLAGS = -version-info 0:0:0 @LIBGLIB_LIBS@ @LDFLAGS@ \
@@ -351,8 +352,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-main.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-message.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-names.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-report-external.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-report-standard.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-reporting.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-statistics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-test.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtinu_la-utils.Plo@am__quote@
@@ -441,6 +444,20 @@ libtinu_la-statistics.lo: statistics.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='statistics.c' object='libtinu_la-statistics.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtinu_la_CFLAGS) $(CFLAGS) -c -o libtinu_la-statistics.lo `test -f 'statistics.c' || echo '$(srcdir)/'`statistics.c
+
+libtinu_la-names.lo: names.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtinu_la_CFLAGS) $(CFLAGS) -MT libtinu_la-names.lo -MD -MP -MF $(DEPDIR)/libtinu_la-names.Tpo -c -o libtinu_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libtinu_la-names.Tpo $(DEPDIR)/libtinu_la-names.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='names.c' object='libtinu_la-names.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtinu_la_CFLAGS) $(CFLAGS) -c -o libtinu_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
+
+libtinu_la-reporting.lo: reporting.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtinu_la_CFLAGS) $(CFLAGS) -MT libtinu_la-reporting.lo -MD -MP -MF $(DEPDIR)/libtinu_la-reporting.Tpo -c -o libtinu_la-reporting.lo `test -f 'reporting.c' || echo '$(srcdir)/'`reporting.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libtinu_la-reporting.Tpo $(DEPDIR)/libtinu_la-reporting.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='reporting.c' object='libtinu_la-reporting.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtinu_la_CFLAGS) $(CFLAGS) -c -o libtinu_la-reporting.lo `test -f 'reporting.c' || echo '$(srcdir)/'`reporting.c
 
 libtinu_la-report-standard.lo: report-standard.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libtinu_la_CFLAGS) $(CFLAGS) -MT libtinu_la-report-standard.lo -MD -MP -MF $(DEPDIR)/libtinu_la-report-standard.Tpo -c -o libtinu_la-report-standard.lo `test -f 'report-standard.c' || echo '$(srcdir)/'`report-standard.c

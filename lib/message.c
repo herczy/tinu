@@ -43,18 +43,6 @@
 #include <tinu/message.h>
 #include <tinu/log.h>
 
-static const gchar *g_priority_names[] = {
-  "emergency",
-  "alert",
-  "critical",
-  "error",
-  "warning",
-  "notice",
-  "info",
-  "debug",
-  NULL
-};
-
 static void
 _msg_append_tag(Message *msg, MessageTag *tag, gint *size)
 {
@@ -313,21 +301,13 @@ const gchar *
 msg_format_priority(gint priority)
 {
   g_assert(priority >= LOG_EMERG && priority <= LOG_DEBUG);
-  return g_priority_names[priority];
+  return tinu_lookup_key(MessagePriority_names, priority, NULL);
 }
 
 gint
 msg_get_priority_value(const gchar *name)
 {
-  gint i;
-
-  for (i = 0; g_priority_names[i]; i++)
-    {
-      if (!strcasecmp(g_priority_names[i], name))
-        return i;
-    }
-
-  return -1;
+  return tinu_lookup_name(MessagePriority_names, name, -1, -1);
 }
 
 gchar *
@@ -347,3 +327,16 @@ msg_format_simple(const Message *self)
 
   return g_string_free(str, FALSE);
 }
+
+const NameTable MessagePriority_names[] =
+{
+  { LOG_EMERG,    "emergency",  9 },
+  { LOG_ALERT,    "alert",      5 },
+  { LOG_CRIT,     "critical",   8 },
+  { LOG_ERR,      "error",      5 },
+  { LOG_WARNING,  "warning",    7 },
+  { LOG_NOTICE,   "notice",     6 },
+  { LOG_INFO,     "info",       4 },
+  { LOG_DEBUG,    "debug",      5 },
+  { 0,            NULL,         0 }
+};

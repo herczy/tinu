@@ -38,6 +38,8 @@
 #include <glib/garray.h>
 #include <glib/gerror.h>
 
+#include <tinu/names.h>
+
 __BEGIN_DECLS
 
 typedef struct _MessageTag
@@ -82,6 +84,8 @@ const gchar *msg_format_priority(gint priority);
 gint msg_get_priority_value(const gchar *name);
 
 gchar *msg_format_simple(const Message *self);
+
+extern const NameTable MessagePriority_names[];
 
 __END_DECLS
 

@@ -1,6 +1,6 @@
 /* TINU - Unittesting framework
 *
-* Copyright (c) 2009, Viktor Hercinger <hercinger.viktor@gmail.com>
+* Copyright (c) 2010, Viktor Hercinger <hercinger.viktor@gmail.com>
 * All rights reserved.
 * 
 * Redistribution and use in source and binary forms, with or without
@@ -28,43 +28,22 @@
 * Author(s): Viktor Hercinger <hercinger.viktor@gmail.com>
 */
 
-#ifndef _TINU_REPORTING_H
-#define _TINU_REPORTING_H
+#ifndef _TINU_NAMES_H
+#define _TINU_NAMES_H
 
-#include <glib/goption.h>
+#include <glib/gtypes.h>
 
-#include <tinu/statistics.h>
-#include <tinu/names.h>
+typedef gint64 NameTableKey;
 
-__BEGIN_DECLS
-
-typedef enum
+typedef struct _NameTable
 {
-  STAT_VERB_NONE = 0,
-  STAT_VERB_SUMMARY,
-  STAT_VERB_SUITES,
-  STAT_VERB_FULL,
-  STAT_VERB_VERBOSE,
-} StatisticsVerbosity;
+  NameTableKey      m_key;
+  const gchar      *m_name;
+  gssize            m_length;
+} NameTable;
 
-/** Reporting callback to handle statistics after tests */
-typedef void (*ReportingHandleCb)(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour);
-
-/** Reporting callback to check whether the module is ready */
-typedef gboolean (*ReportingCheckCb)(StatisticsVerbosity verbosity, gboolean enable_colour);
-
-/* Report module structure */
-typedef struct _ReportModule
-{
-  const gchar        *m_name;
-  const GOptionEntry *m_options;
-
-  ReportingCheckCb    m_check;
-  ReportingHandleCb   m_handle;
-} ReportModule;
-
-extern const NameTable StatisticsVerbosity_names[];
-
-__END_DECLS
+const gchar *tinu_lookup_key(const NameTable *table, NameTableKey key, gssize *length);
+NameTableKey tinu_lookup_name(const NameTable *table, const gchar *name,
+  gssize length, gint errkey);
 
 #endif

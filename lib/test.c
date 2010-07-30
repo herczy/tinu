@@ -329,16 +329,8 @@ _test_lookup_case(TestSuite *suite, const gchar *test)
 const gchar *
 test_result_name(TestCaseResult result)
 {
-  static const gchar *names[] = {
-    [TEST_PASSED]       = "passed",
-    [TEST_FAILED]       = "failed",
-    [TEST_ABORT]        = "aborted",
-    [TEST_SEGFAULT]     = "segfault",
-    [TEST_INTERNAL]     = "internal error",
-  };
-
   g_assert (result > TEST_NONE && result <= TEST_INTERNAL);
-  return names[result];
+  return tinu_lookup_key(TestCaseResult_names, result, NULL);
 }
 
 void
@@ -553,3 +545,29 @@ tinu_test_assert(gboolean condition, const gchar *assert_type, const gchar *cond
 
   return condition;
 }
+
+const NameTable TestCaseResult_names[] =
+{
+  { TEST_NONE,        "none",       4 },
+  { TEST_PASSED,      "passed",     6 },
+  { TEST_FAILED,      "failed",     6 },
+  { TEST_ABORT,       "abort",      5 },
+  { TEST_SEGFAULT,    "segfault",   8 },
+  { TEST_INTERNAL,    "internal",   8 },
+  { 0,                NULL,         0 }
+};
+
+const NameTable TestHookID_names[] =
+{
+  { TEST_HOOK_ASSERT,           "TEST_HOOK_ASSERT",           16 },
+  { TEST_HOOK_SIGNAL_ABORT,     "TEST_HOOK_SIGNAL_ABORT",     22 },
+  { TEST_HOOK_SIGNAL_SEGFAULT,  "TEST_HOOK_SIGNAL_SEGFAULT",  25 },
+  { TEST_HOOK_BEFORE_TEST,      "TEST_HOOK_BEFORE_TEST",      21 },
+  { TEST_HOOK_AFTER_TEST,       "TEST_HOOK_AFTER_TEST",       20 },
+  { TEST_HOOK_BEFORE_SUITE,     "TEST_HOOK_BEFORE_SUITE",     22 },
+  { TEST_HOOK_AFTER_SUITE,      "TEST_HOOK_AFTER_SUITE",      21 },
+  { TEST_HOOK_MAX,              "TEST_HOOK_MAX",              13 },
+  { TEST_HOOK_ALL,              "TEST_HOOK_ALL",              13 },
+  { 0,                          NULL,                          0 }
+};
+

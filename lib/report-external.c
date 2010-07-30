@@ -141,7 +141,7 @@ _test_report_put_file(FILE *file, TestStatistics *stat)
           test = &g_array_index(suite->m_test_info_list, StatTestInfo, j);
 
           _prg_report_set("suite.%s.test.%s", suite->m_suite->m_name, test->m_test->m_name);
-          _prg_report_print(file, "result=%d", (test->m_result == TEST_SEGFAULT ? -1 : (test->m_result == TEST_FAILED ? 0 : 1)));
+          _prg_report_print(file, "result=%s", test_result_name(test->m_result));
           _prg_report_print(file, "asserts.passed=%d", test->m_assertions_passed);
           _prg_report_print(file, "asserts.total=%d", test->m_assertions);
           _prg_report_print(file, "time=%lf", (test->m_end - test->m_start) / tics);

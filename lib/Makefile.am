@@ -13,6 +13,7 @@ include_HEADERS = tinu/backtrace.h \
                   tinu/utils.h \
                   tinu/clist.h \
                   tinu/statistics.h \
+                  tinu/names.h \
                   tinu/reporting.h
 
 lib_LTLIBRARIES = libtinu.la
@@ -25,6 +26,8 @@ libtinu_la_SOURCES = backtrace.c \
                      utils.c \
                      clist.c \
                      statistics.c \
+                     names.c \
+                     reporting.c \
                      report-standard.c \
                      report-external.c
 libtinu_la_CFLAGS = -Itinu -Wall @LIBGLIB_CFLAGS@ @CFLAGS@

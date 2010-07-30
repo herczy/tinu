@@ -1,6 +1,6 @@
 /* TINU - Unittesting framework
 *
-* Copyright (c) 2009, Viktor Hercinger <hercinger.viktor@gmail.com>
+* Copyright (c) 2010, Viktor Hercinger <hercinger.viktor@gmail.com>
 * All rights reserved.
 * 
 * Redistribution and use in source and binary forms, with or without
@@ -28,43 +28,54 @@
 * Author(s): Viktor Hercinger <hercinger.viktor@gmail.com>
 */
 
-#ifndef _TINU_REPORTING_H
-#define _TINU_REPORTING_H
+#include <string.h>
 
-#include <glib/goption.h>
+#include <glib/gmem.h>
 
-#include <tinu/statistics.h>
 #include <tinu/names.h>
 
-__BEGIN_DECLS
-
-typedef enum
+const gchar *
+tinu_lookup_key(const NameTable *table, NameTableKey key, gssize *length)
 {
-  STAT_VERB_NONE = 0,
-  STAT_VERB_SUMMARY,
-  STAT_VERB_SUITES,
-  STAT_VERB_FULL,
-  STAT_VERB_VERBOSE,
-} StatisticsVerbosity;
+  gint i;
 
-/** Reporting callback to handle statistics after tests */
-typedef void (*ReportingHandleCb)(TestStatistics *stat, StatisticsVerbosity verbosity, gboolean enable_colour);
+  for (i = 0; table[i].m_name; i++)
+    {
+      if (table[i].m_key == key)
+        break;
+    }
 
-/** Reporting callback to check whether the module is ready */
-typedef gboolean (*ReportingCheckCb)(StatisticsVerbosity verbosity, gboolean enable_colour);
+  if (!table[i].m_name)
+    return -1;
 
-/* Report module structure */
-typedef struct _ReportModule
+  if (length)
+    {
+      if (table[i].m_length >= 0)
+        *length = table[i].m_length;
+      else
+        *length = strlen(table[i].m_name);
+    }
+
+  return table[i].m_name;
+}
+
+NameTableKey
+tinu_lookup_name(const NameTable *table, const gchar *name, gssize length, gint errkey)
 {
-  const gchar        *m_name;
-  const GOptionEntry *m_options;
+  gint i;
+  gsize rlen = (length >= 0 ? length : strlen(name));
 
-  ReportingCheckCb    m_check;
-  ReportingHandleCb   m_handle;
-} ReportModule;
+  for (i = 0; table[i].m_name; i++)
+    {
+      if (table[i].m_length >= 0 && table[i].m_length != rlen)
+        continue;
 
-extern const NameTable StatisticsVerbosity_names[];
+      if (!strncmp(table[i].m_name, name, rlen))
+        break;
+    }
 
-__END_DECLS
+  if (!table[i].m_name)
+    return errkey;
 
-#endif
+  return table[i].m_key;
+}
