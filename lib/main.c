@@ -101,6 +101,14 @@ _tinu_opt_priority(const gchar *opt G_GNUC_UNUSED, const gchar *value,
   gpointer data, GError **error)
 {
   gint priority = msg_get_priority_value(value);
+  gchar *endl;
+
+  if (priority == -1)
+    {
+      priority = strtoul(value, &endl, 10);
+      if (!endl || (*endl) != '\0' || priority < LOG_EMERG || priority > LOG_DEBUG)
+        priority = -1;
+    }
 
   if (priority == -1)
     {
@@ -150,7 +158,7 @@ static GOptionEntry g_main_opt_entries[] = {
     "Set log priority (emergency, alert, critical, error, warning, notice, info, debug)",
     "level" },
   { "results", 'R', 0, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_stat_verb,
-    "Set statistics verbosity (none, summary (default), suites, full, verbose)",
+    "Set statistics verbosity (none, summary (default), suites, full, verbose or 0 - 7)",
     "verbosity" },
   { "leakwatch", 0, 0, G_OPTION_ARG_NONE, (gpointer)&g_opt_leakwatch,
     "Enable leak watcher (warning: slows tests down by a significant ammount of time)", NULL },
