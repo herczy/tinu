@@ -294,7 +294,7 @@ tinu_main(int *argc, char **argv[])
       return 1;
     }
 
-  if (report->m_check && !report->m_check(g_opt_stat_verb, g_opt_fancy))
+  if (report && report->m_check && !report->m_check(g_opt_stat_verb, g_opt_fancy))
     return 1;
 
   if (!g_opt_silent)
