@@ -125,7 +125,15 @@ gboolean
 _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
   gpointer data, GError **error)
 {
-  NameTableKey key = tinu_lookup_key(StatisticsVerbosity_names, value, NULL);
+  NameTableKey key = tinu_lookup_name(StatisticsVerbosity_names, value, -1, -1);
+  gchar *endl;
+
+  if (key == -1)
+    {
+      key = strtoul(value, &endl, 10);
+      if (!endl || (*endl) != '\0' || key < STAT_VERB_NONE || key > STAT_VERB_VERBOSE)
+        key = -1;
+    }
 
   if (key == -1)
     {
@@ -134,6 +142,7 @@ _tinu_opt_stat_verb(const gchar *opt G_GNUC_UNUSED, const gchar *value,
       return FALSE;
     }
 
+  g_opt_stat_verb = key;
   return TRUE;
 }
 
