@@ -68,9 +68,31 @@ int tinu_main(int *argc, char **argv[]);
  */
 void tinu_test_add(const gchar *suite_name,
                    const gchar *test_name,
-                   TestSetup setup,
-                   TestCleanup cleanup,
-                   TestFunction func);
+                   TestSetupSimple setup,
+                   TestCleanupSimple cleanup,
+                   TestFunctionSimple func);
+
+/** @brief Add an extended test to the framework
+ * @param suite_name Suite test belongs to
+ * @param test_name Name of the current test
+ * @param setup Setup function (NULL if none)
+ * @param cleanup Cleanup function (NULL if none)
+ * @param func Test function (NULL if none)
+ * @param user_data User data put into TestCase structure
+ * @param user_data_cleanup Called to free user data
+ * @see test_add
+ * @see test_add_extended
+ *
+ * Similar to test_add_extended but there is no test context required. It adds
+ * the tests to the main test context defined in test.c through test_add.
+ */
+void tinu_test_add_extended(const gchar *suite_name,
+                            const gchar *test_name,
+                            TestSetup setup,
+                            TestCleanup cleanup,
+                            TestFunction func,
+                            gpointer user_data,
+                            CleanupFunction user_data_cleanup);
 
 /** @brief Add a reporting facility to the framework
  * @param module Report module descriptor

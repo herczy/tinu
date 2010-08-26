@@ -66,11 +66,12 @@ typedef struct _LeakInfo
   gpointer        m_watch_handle;
 } LeakInfo;
 
-typedef struct _TestHookItem
+typedef struct _TestSimplifiedFunctions
 {
-  TestHookCb      m_callback;
-  gpointer        m_user_data;
-} TestHookItem;
+  TestSetupSimple         m_setup;
+  TestCleanupSimple       m_cleanup;
+  TestFunctionSimple      m_function;
+} TestSimplifiedFunctions;
 
 static void
 _test_run_hooks(TestHookID hook_id, ...)
@@ -161,13 +162,13 @@ _test_case_run_intern(TestContext *self, TestCase *test)
   _test_run_hooks(TEST_HOOK_BEFORE_TEST, test);
 
   if (test->m_setup)
-    ctx = test->m_setup();
+    ctx = test->m_setup(test);
 
   if (test->m_test)
-    test->m_test(ctx);
+    test->m_test(test, ctx);
 
   if (test->m_cleanup)
-    test->m_cleanup(ctx);
+    test->m_cleanup(test, ctx);
 
   if (g_test_case_current_result == TEST_NONE)
     g_test_case_current_result = TEST_PASSED;
@@ -334,6 +335,29 @@ _test_lookup_case(TestSuite *suite, const gchar *test)
   return NULL;
 }
 
+static gpointer
+_test_setup_wrapper(TestCase *self)
+{
+  TestSimplifiedFunctions *func = (TestSimplifiedFunctions *)self->m_user_data;
+  return func->m_setup ? func->m_setup() : NULL;
+}
+
+static void
+_test_cleanup_wrapper(TestCase *self, gpointer context)
+{
+  TestSimplifiedFunctions *func = (TestSimplifiedFunctions *)self->m_user_data;
+  if (func->m_cleanup)
+    func->m_cleanup(context);
+}
+
+static void
+_test_func_wrapper(TestCase *self, gpointer context)
+{
+  TestSimplifiedFunctions *func = (TestSimplifiedFunctions *)self->m_user_data;
+  if (func->m_function)
+    func->m_function(context);
+}
+
 const gchar *
 test_result_name(TestCaseResult result)
 {
@@ -360,7 +384,14 @@ test_context_destroy(TestContext *self)
       test_suite = (TestSuite *)self->m_suites->pdata[i];
 
       for (j = 0; j < test_suite->m_tests->len; j++)
-        g_free(test_suite->m_tests->pdata[j]);
+        {
+          test_case = (TestCase *)test_suite->m_tests->pdata[j];
+
+          if (test_case->m_user_data_cleanup)
+            test_case->m_user_data_cleanup(test_case->m_user_data);
+
+          g_free(test_case);
+        }
 
       g_ptr_array_free(test_suite->m_tests, TRUE);
       g_free(test_suite);
@@ -374,9 +405,34 @@ void
 test_add(TestContext *self,
          const gchar *suite_name,
          const gchar *test_name,
-         TestSetup setup,
-         TestCleanup cleanup,
-         TestFunction func)
+         TestSetupSimple setup,
+         TestCleanupSimple cleanup,
+         TestFunctionSimple func)
+{
+  TestSimplifiedFunctions *user_data = g_new0(TestSimplifiedFunctions, 1);
+  user_data->m_setup = setup;
+  user_data->m_cleanup = cleanup;
+  user_data->m_function = func;
+
+  test_add_extended(self,
+                    suite_name,
+                    test_name,
+                    _test_setup_wrapper,
+                    _test_cleanup_wrapper,
+                    _test_func_wrapper,
+                    user_data,
+                    g_free);
+}
+
+void
+test_add_extended(TestContext *self,
+                  const gchar *suite_name,
+                  const gchar *test_name,
+                  TestSetup setup,
+                  TestCleanup cleanup,
+                  TestFunction func,
+                  gpointer user_data,
+                  CleanupFunction user_data_cleanup)
 {
   TestSuite *suite;
   TestCase *res;
@@ -416,6 +472,8 @@ test_add(TestContext *self,
   res->m_setup = setup;
   res->m_cleanup = cleanup;
   res->m_test = func;
+  res->m_user_data = user_data;
+  res->m_user_data_cleanup = user_data_cleanup;
 
   g_ptr_array_add(suite->m_tests, res);
 

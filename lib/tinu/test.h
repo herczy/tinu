@@ -52,23 +52,40 @@ typedef struct _TestCase TestCase;
 typedef struct _TestSuite TestSuite;
 typedef struct _TestContext TestContext;
 
+/** @brief Generic cleanup function
+ */
+typedef void (*CleanupFunction)(gpointer);
+
 /** @brief Setup function
  * The result is the _context_ of the test, meaning that it will be passed to
  * the test and later cleaned up. The rationale behind this is that the same
  * dataset can be prepared and cleaned up for different tests.
  */
-typedef gpointer (*TestSetup)(void);
+typedef gpointer (*TestSetup)(TestCase *);
 /** @brief Cleanup function
  * This function is used to clean up the previously prepared context. You should
  * free the allocated memory if neccessary.
  */
-typedef void (*TestCleanup)(gpointer);
+typedef void (*TestCleanup)(TestCase *, gpointer);
 /** @brief Test function
  * TestFunction is the main body of the test case. Generaly speaking it should be
  * independent of the preparation/cleanup (i.e. it should work independently of the 
  * actual initialization as much as possible).
  */
-typedef void (*TestFunction)(gpointer);
+typedef void (*TestFunction)(TestCase *, gpointer);
+
+/** @brief Simplified setup function
+ * @see TestSetup
+ */
+typedef gpointer (*TestSetupSimple)(void);
+/** @brief Simplified cleanup function
+ * @see TestCleanup
+ */
+typedef CleanupFunction TestCleanupSimple;
+/** @brief Simplified test function
+ * @see TestFunction
+ */
+typedef void (*TestFunctionSimple)(gpointer);
 
 /**
  * Signifies the result of a given test case and suite.
@@ -140,6 +157,12 @@ struct _TestCase
   TestCleanup     m_cleanup;
   /** Test function. This should be the "body" of the test */
   TestFunction    m_test;
+
+  /** User data that can be set by test_add_extended */
+  gpointer        m_user_data;
+
+  /** Cleanup function for user data */
+  CleanupFunction m_user_data_cleanup;
 };
 
 /** @brief Test suite
@@ -219,7 +242,7 @@ void test_context_init(TestContext *self);
  */
 void test_context_destroy(TestContext *self);
 
-/** @brief Add test to context
+/** @brief Add simple test to context
  * @param self Test context
  * @param suite_name Suite test belongs to
  * @param test_name Name of the current test
@@ -229,13 +252,40 @@ void test_context_destroy(TestContext *self);
  *
  * This function is used to fill a test context with test cases. Suites are
  * handled implicitly, so there is no need to add them separately.
+ *
+ * @note Simplified functions are added with a wrapper function
  */
 void test_add(TestContext *self,
               const gchar *suite_name,
               const gchar *test_name,
-              TestSetup setup,
-              TestCleanup cleanup,
-              TestFunction func);
+              TestSetupSimple setup,
+              TestCleanupSimple cleanup,
+              TestFunctionSimple func);
+
+/** @brief Add extended test to context
+ * @param self Test context
+ * @param suite_name Suite test belongs to
+ * @param test_name Name of the current test
+ * @param setup Setup function (NULL if none)
+ * @param cleanup Cleanup function (NULL if none)
+ * @param func Test function (NULL if none)
+ * @param user_data User data put into TestCase structure
+ * @param user_data_cleanup Called to free user data
+ *
+ * This function is used to fill a test context with test cases. Suites are
+ * handled implicitly, so there is no need to add them separately.
+ *
+ * @note This is used by the C++ wrapper so one class can contain several
+ * test cases
+ */
+void test_add_extended(TestContext *self,
+                       const gchar *suite_name,
+                       const gchar *test_name,
+                       TestSetup setup,
+                       TestCleanup cleanup,
+                       TestFunction func,
+                       gpointer user_data,
+                       CleanupFunction user_data_cleanup);
 
 /** @brief Register a hook in the test context
  * @param self Test context

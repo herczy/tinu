@@ -381,9 +381,9 @@ tinu_main(int *argc, char **argv[])
 void
 tinu_test_add(const gchar *suite_name,
               const gchar *test_name,
-              TestSetup setup,
-              TestCleanup cleanup,
-              TestFunction func)
+              TestSetupSimple setup,
+              TestCleanupSimple cleanup,
+              TestFunctionSimple func)
 {
   if (!g_main_test_context_init)
     {
@@ -393,6 +393,32 @@ tinu_test_add(const gchar *suite_name,
     }
 
   test_add((TestContext *)&g_main_test_context, suite_name, test_name, setup, cleanup, func);
+}
+
+void
+tinu_test_add_extended(const gchar *suite_name,
+                       const gchar *test_name,
+                       TestSetup setup,
+                       TestCleanup cleanup,
+                       TestFunction func,
+                       gpointer user_data,
+                       CleanupFunction user_data_cleanup)
+{
+  if (!g_main_test_context_init)
+    {
+      /* Initialize test context */
+      test_context_init((TestContext *)&g_main_test_context);
+      g_main_test_context_init = TRUE;
+    }
+
+  test_add_extended((TestContext *)&g_main_test_context,
+                    suite_name,
+                    test_name,
+                    setup,
+                    cleanup,
+                    func,
+                    user_data,
+                    user_data_cleanup);
 }
 
 void
