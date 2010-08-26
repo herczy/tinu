@@ -343,6 +343,21 @@ test_context_init(TestContext *self)
 void
 test_context_destroy(TestContext *self)
 {
+  gint i, j;
+  TestSuite *test_suite;
+  TestCase *test_case;
+
+  for (i = 0; i < self->m_suites->len; i++)
+    {
+      test_suite = (TestSuite *)self->m_suites->pdata[i];
+
+      for (j = 0; j < test_suite->m_tests->len; j++)
+        g_free(test_suite->m_tests->pdata[j]);
+
+      g_ptr_array_free(test_suite->m_tests, TRUE);
+      g_free(test_suite);
+    }
+
   g_ptr_array_free(self->m_suites, TRUE);
   test_unregister_hook(self, TEST_HOOK_ALL, NULL, NULL);
 }
