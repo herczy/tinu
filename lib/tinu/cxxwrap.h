@@ -127,8 +127,6 @@ class CxxLeakwatch
                                      gpointer oldptr, gpointer ptr, gsize size,
                                      Backtrace *trace,
                                      gpointer user_data);
-public:
-  typedef enum { MALLOC, REALLOC, FREE } Operation;
 
 public:
   CxxLeakwatch();
