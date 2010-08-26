@@ -36,48 +36,49 @@ protected:
   }
 };
 
-class TestSuccess : public CxxTest
+class TestSuccess
 {
 public:
-  void test()
+  void test_default()
+  {
+  }
+
+  void test_assert()
   {
     TINU_ASSERT_TRUE(true);
     TINU_ASSERT_FALSE(false);
   }
-
 };
 
-class TestFailAssert : public CxxTest
+class TestFail
 {
 public:
-  void test()
+  void test_assert()
   {
     TINU_ASSERT_TRUE(0);
   }
-};
-
-class TestFailSegv : public CxxTest
-{
-public:
-  void test()
+  
+  void test_segv()
   {
     *(char *)NULL = 0;
   }
+
+  void test_exception()
+  {
+    throw Exception("Something went wrong!");
+  }
+
 };
 
-class TestLeakGlobal : public CxxTest
+class TestLeak
 {
 public:
-  void test()
+  void test_global()
   {
     malloc(4096);
   }
-};
 
-class TestLeakCustom : public CxxTest
-{
-public:
-  void test()
+  void test_custom()
   {
     TestLeakWatch lw;
 
@@ -86,25 +87,16 @@ public:
   }
 };
 
-class TestException : public CxxTest
-{
-public:
-  void test()
-  {
-    throw Exception("Something went wrong!");
-  }
-};
-
 int
 main(int argc, char *argv[])
 {
   CxxTinu tinu(&argc, &argv);
 
-  tinu.add_test<CxxTest>("success", "default");
-  tinu.add_test<TestSuccess>("success", "assert");
-  tinu.add_test<TestFailAssert>("fail", "assert");
-  tinu.add_test<TestFailSegv>("fail", "segfault");
-  tinu.add_test<TestLeakGlobal>("leak", "global");
-  tinu.add_test<TestLeakCustom>("leak", "custom");
-  tinu.add_test<TestException>("fail", "exception");
+  tinu.add_test("success", "default", &TestSuccess::test_default);
+  tinu.add_test("success", "assert", &TestSuccess::test_assert);
+  tinu.add_test("fail", "assert", &TestFail::test_assert);
+  tinu.add_test("fail", "segfault", &TestFail::test_segv);
+  tinu.add_test("leak", "global", &TestLeak::test_global);
+  tinu.add_test("leak", "custom", &TestLeak::test_custom);
+  tinu.add_test("fail", "exception", &TestFail::test_exception);
 }

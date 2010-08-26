@@ -209,32 +209,4 @@ CxxTinu::~CxxTinu()
   exit(tinu_main(m_argc, m_argv));
 }
 
-void
-CxxTinu::test_wrapper(gpointer context)
-{
-  CxxTest *test = (CxxTest *)context;
-  try
-    {
-      test->test();
-    }
-  catch (Exception &e)
-    {
-      e.dump_log("TINU exception caught during test", LOG_ERR);
-    }
-  catch (std::exception &e)
-    {
-      log_error("Standard exception caught", msg_tag_str("exception", e.what()), NULL);
-    }
-  catch (...)
-    {
-      log_error("Unknown exception caught", NULL);
-    }
-}
-
-void
-CxxTinu::test_cleanup_wrapper(gpointer context)
-{
-  delete (CxxTest *)context;
-}
-
 }

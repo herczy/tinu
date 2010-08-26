@@ -196,22 +196,6 @@ private:
   gpointer m_handle;
 };
 
-/* Test case wrapper */
-
-class CxxTest
-{
-  friend class CxxTinu;
-
-public:
-  inline CxxTest()
-  {}
-  virtual inline ~CxxTest()
-  {}
-
-  virtual inline void test()
-  {}
-};
-
 /* Tinu main */
 
 class CxxTinu
@@ -221,20 +205,93 @@ public:
   ~CxxTinu();
 
   template < class T_test >
+  void add_test(const gchar *suite, const gchar *name, void (T_test::*test_case)(void))
+  {
+    Wrapper< T_test > *ud = new Wrapper< T_test >(test_case);
+    tinu_test_add_extended(suite,                                   /* Suite name */
+                           name,                                    /* Case name */
+                           test_setup_wrapper<T_test>,              /* Extended setup */
+                           test_cleanup_wrapper<T_test>,            /* Extended cleanup */
+                           test_wrapper<T_test>,                    /* Extended test case */
+                           reinterpret_cast< gpointer >(ud),        /* Case wrapper */
+                           &Wrapper< T_test >::destroy);            /* User data */
+  }
+
+  template < class T_test >
   void add_test(const gchar *suite, const gchar *name)
   {
-    tinu_test_add(suite, name, test_setup_wrapper<T_test>, test_cleanup_wrapper, test_wrapper);
+    add_test< T_test >(suite, name, &T_test::test);
   }
 
 private:
   template < class T_test >
-  static gpointer test_setup_wrapper()
+  static gpointer test_setup_wrapper(TestCase *test)
   {
     return (gpointer)new T_test;
   }
 
-  static void test_cleanup_wrapper(gpointer context);
-  static void test_wrapper(gpointer context);
+  template < class T_test >
+  static void test_wrapper(TestCase *test, gpointer context)
+  {
+    typedef void (T_test::*TestCase)(void);
+    T_test *testobj = reinterpret_cast< T_test * >(context);
+    Wrapper< T_test > *ud = reinterpret_cast< Wrapper < T_test > * >(test->m_user_data);
+    try
+      {
+        ud->execute(testobj);
+      }
+    catch (Exception &e)
+      {
+        e.dump_log("TINU exception caught during test", LOG_ERR);
+      }
+    catch (std::exception &e)
+      {
+        log_error("Standard exception caught", msg_tag_str("exception", e.what()), NULL);
+      }
+    catch (...)
+      {
+        log_error("Unknown exception caught", NULL);
+      }
+  }
+
+  template < class T_test >
+  static void test_cleanup_wrapper(TestCase *test, gpointer context)
+  {
+    T_test *testobj = reinterpret_cast< T_test * >(context);
+    delete testobj;
+  }
+
+private:
+  template < class T_test >
+  class Wrapper
+  {
+  public:
+    typedef void (T_test::*Case)(void);
+
+  public:
+    Wrapper(Case test)
+      : m_case(test)
+    {
+    }
+
+    ~Wrapper()
+    {
+    }
+
+    void execute(T_test *obj)
+    {
+      (obj->*m_case)();
+    }
+
+    static void destroy(gpointer user_data)
+    {
+      Wrapper< T_test > *obj = reinterpret_cast< Wrapper< T_test > * >(user_data);
+      delete obj;
+    }
+
+  public:
+    Case          m_case;
+  };
 
 private:
   int *m_argc;
