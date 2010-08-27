@@ -265,7 +265,7 @@ test_case_run_done:
 }
 
 gboolean
-_test_suite_run(TestContext *self, TestSuite *suite)
+_test_suite_run(TestContext *self, TestSuite *suite, TestCase *test)
 {
   gint i;
   gboolean res = TRUE;
@@ -273,9 +273,17 @@ _test_suite_run(TestContext *self, TestSuite *suite)
   g_test_context_current = self;
   _test_run_hooks(TEST_HOOK_BEFORE_SUITE, suite);
 
-  for (i = 0; i < suite->m_tests->len; i++)
-    res &= TEST_PASSED ==
-      _test_case_run_single_test(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
+  if (test)
+    {
+      res = TEST_PASSED ==
+        _test_case_run_single_test(self, test);
+    }
+  else
+    {
+      for (i = 0; i < suite->m_tests->len; i++)
+        res &= TEST_PASSED ==
+          _test_case_run_single_test(self, (TestCase *)g_ptr_array_index(suite->m_tests, i));
+    }
 
   log_format(res ? LOG_DEBUG : LOG_WARNING, "Test suite run complete",
             msg_tag_str("suite", suite->m_name),
@@ -503,7 +511,7 @@ tinu_test_all_run(TestContext *self)
 
   for (i = 0; i < self->m_suites->len; i++)
     {
-      suite_res = _test_suite_run(self, (TestSuite *)g_ptr_array_index(self->m_suites, i));
+      suite_res = _test_suite_run(self, (TestSuite *)g_ptr_array_index(self->m_suites, i), NULL);
       res &= suite_res;
     }
 
@@ -521,7 +529,31 @@ tinu_test_suite_run(TestContext *self, const gchar *suite_name)
       return FALSE;
     }
 
-  return _test_suite_run(self, suite);
+  return _test_suite_run(self, suite, NULL);
+}
+
+gboolean
+tinu_test_case_run(TestContext *self, const gchar *suite_name, const gchar *test_name)
+{
+  TestSuite *suite = _test_suite_lookup(self, suite_name, FALSE);
+  TestCase *test;
+
+  if (!suite)
+    {
+      log_error("Suite does not exist", msg_tag_str("suite", suite_name), NULL);
+      return FALSE;
+    }
+
+  test = _test_lookup_case(suite, test_name);
+  if (!test)
+    {
+      log_error("Test does not exist in suite",
+                msg_tag_str("suite", suite_name),
+                msg_tag_str("case", test_name), NULL);
+      return FALSE;
+    }
+
+  return _test_suite_run(self, suite, test);
 }
 
 gboolean

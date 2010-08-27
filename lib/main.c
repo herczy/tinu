@@ -58,6 +58,7 @@ static gint g_opt_priority = LOG_WARNING;
 static StatisticsVerbosity g_opt_stat_verb = STAT_VERB_SUMMARY;
 
 static const gchar *g_opt_suite = NULL;
+static const gchar *g_opt_test_case = NULL;
 static const gchar *g_opt_file = NULL;
 
 static const gchar *g_opt_report = "print";
@@ -176,6 +177,8 @@ static GOptionEntry g_main_opt_entries[] = {
     "Don't handle signals from test", NULL },
   { "suite", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_suite,
     "Run only the given suite", NULL },
+  { "test-case", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_test_case,
+    "Run only a given test case (a suite with --suite also needs to be given)", NULL },
   { "report", 0, 0, G_OPTION_ARG_STRING, (gpointer)&g_opt_report,
     "Use the given report module (default: print)", NULL },
   { "no-report", 0, G_OPTION_ARG_NONE, G_OPTION_ARG_CALLBACK, (gpointer)&_tinu_opt_report_null,
@@ -318,10 +321,18 @@ tinu_main(int *argc, char **argv[])
     {
       log = fopen(g_opt_file, "a");
 
-      if (log)
-        handle = log_register_message_handler(msg_file_handler, g_opt_priority, (gpointer)log);
-      else
-        log_error("Cannot open logfile", msg_tag_str("file", g_opt_file), NULL);
+      if (!log)
+        {
+          log_error("Cannot open logfile", msg_tag_str("file", g_opt_file), NULL);
+          return 1;
+        }
+      handle = log_register_message_handler(msg_file_handler, g_opt_priority, (gpointer)log);
+    }
+
+  if (g_opt_test_case && !g_opt_suite)
+    {
+      log_error("Test suite missing for --test-case", NULL);
+      return 1;
     }
 
   g_main_test_context.m_sighandle = g_opt_sighandle;
@@ -337,7 +348,12 @@ tinu_main(int *argc, char **argv[])
 
   log_debug("Running tests", NULL);
   if (g_opt_suite)
-    res = tinu_test_suite_run(&g_main_test_context, g_opt_suite);
+    {
+      if (g_opt_test_case)
+        res = tinu_test_case_run(&g_main_test_context, g_opt_suite, g_opt_test_case);
+      else
+        res = tinu_test_suite_run(&g_main_test_context, g_opt_suite);
+    }
   else
     res = tinu_test_all_run(&g_main_test_context);
 

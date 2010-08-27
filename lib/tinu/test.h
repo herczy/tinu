@@ -300,6 +300,16 @@ gboolean tinu_test_all_run(TestContext *self);
  * This runs only a distinct test suite. Suites are accessed by name.
  */
 gboolean tinu_test_suite_run(TestContext *self, const gchar *suite_name);
+/** @brief Run an individual test case
+ * @param self Test context
+ * @param suite_name Suite of the test case
+ * @param test_name Test case to run
+ * @return Wheter the test case succeeded.
+ *
+ * This runs only a distinct test case. Test cases are accessed by
+ * the suite and the test case name.
+ */
+gboolean tinu_test_case_run(TestContext *self, const gchar *suite_name, const gchar *test_name);
 
 /** @brief Evaluate an assertion
  * @param condition The condition to be asserted.
