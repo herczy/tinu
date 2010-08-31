@@ -431,6 +431,25 @@ gboolean tinu_test_assert(gboolean condition, const gchar *assert_type, const gc
                    msg_tag_str("str2", str2),   \
                    NULL)
 
+/** @brief Check if the two integers are equal
+ * @param int1 First integer
+ * @param int2 Second integer
+ *
+ * This macro checks wheter two integers are equal or not. As with
+ * TINU_ASSERT_TRUE and TINU_ASSERT_FALSE this does not emit a
+ * SIGABRT signal.
+ */
+#define TINU_ASSERT_INTEQ(int1, int2)           \
+  tinu_test_assert((int1 == int2),              \
+                   "integer equality",          \
+                   "int1 == int2",              \
+                   __FILE__,                    \
+                   __PRETTY_FUNCTION__,         \
+                   __LINE__,                    \
+                   msg_tag_int("int1", int1),   \
+                   msg_tag_int("int2", int2),   \
+                   NULL)
+
 /** @brief Fail without checking
  *
  * This macro can be used to make TINU fail. Similar to calling

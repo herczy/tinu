@@ -68,6 +68,11 @@ test_fail_3(gpointer context G_GNUC_UNUSED)
   TINU_ASSERT_TRUE(2);
   TINU_ASSERT_TRUE(1);
   TINU_ASSERT_TRUE(0);
+
+  TINU_ASSERT_STREQ("hello", "hello");
+  TINU_ASSERT_STREQ("hello", "hello2");
+  TINU_ASSERT_INTEQ(1, 1);
+  TINU_ASSERT_INTEQ(1, -1);
 }
 
 void
