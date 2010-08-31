@@ -431,6 +431,20 @@ gboolean tinu_test_assert(gboolean condition, const gchar *assert_type, const gc
                    msg_tag_str("str2", str2),   \
                    NULL)
 
+/** @brief Fail without checking
+ *
+ * This macro can be used to make TINU fail. Similar to calling
+ * TINU_ASSERT_TRUE(0).
+ */
+#define TINU_FAIL                               \
+  tinu_test_assert(0,                           \
+                   "fail",                      \
+                   "<none>",                    \
+                  __FILE__,                     \
+                  __PRETTY_FUNCTION__,          \
+                  __LINE__,                     \
+                  NULL)
+
 /** @brief Make an assertion fatal
  * @param assertion The assertion call, should be one of the above
  *

@@ -243,14 +243,17 @@ private:
     catch (Exception &e)
       {
         e.dump_log("TINU exception caught during test", LOG_ERR);
+        TINU_FAIL;
       }
     catch (std::exception &e)
       {
         log_error("Standard exception caught", msg_tag_str("exception", e.what()), NULL);
+        TINU_FAIL;
       }
     catch (...)
       {
         log_error("Unknown exception caught", NULL);
+        TINU_FAIL;
       }
   }
 
