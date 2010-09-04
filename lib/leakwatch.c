@@ -86,7 +86,8 @@ _leakwatch_malloc(size_t size, const void *caller)
   _hook_pause();
 
   res = g_leakwatch_malloc ? g_leakwatch_malloc(size, caller) : malloc(size);
-  _leakwatch_alert(LEAKWATCH_OPERATION_MALLOC, NULL, res, size);
+  if (res)
+    _leakwatch_alert(LEAKWATCH_OPERATION_MALLOC, NULL, res, size);
 
   _hook_resume();
   return res;
@@ -100,7 +101,8 @@ _leakwatch_realloc(void *ptr, size_t newsize, const void *caller)
   _hook_pause();
 
   res = g_leakwatch_realloc ? g_leakwatch_realloc(ptr, newsize, caller) : realloc(ptr, newsize);
-  _leakwatch_alert(LEAKWATCH_OPERATION_REALLOC, ptr, res, newsize);
+  if (res)
+    _leakwatch_alert(LEAKWATCH_OPERATION_REALLOC, ptr, res, newsize);
 
   _hook_resume();
   return res;
@@ -180,6 +182,15 @@ _tinu_leakwatch_simple_callback(LeakwatchOperation operation,
         if (!oldentry)
           break;
 
+        if (ptr == oldptr)
+          {
+            if (oldentry->m_last)
+              backtrace_unreference(oldentry->m_last);
+            oldentry->m_last = backtrace_reference(trace);
+            oldentry->m_size = size;
+            break;
+          }
+
         entry = t_new(MemoryEntry, 1);
 
         entry->m_ptr = ptr;
@@ -187,7 +198,8 @@ _tinu_leakwatch_simple_callback(LeakwatchOperation operation,
         entry->m_origin = (oldentry ? backtrace_reference(oldentry->m_origin) : NULL);
         entry->m_last = backtrace_reference(trace);
 
-        g_hash_table_replace(self, ptr, entry);
+        g_hash_table_remove(self, oldptr);
+        g_hash_table_insert(self, ptr, entry);
         break;
 
       case LEAKWATCH_OPERATION_FREE :
