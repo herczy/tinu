@@ -3,6 +3,7 @@
 # source tree. 
 #
 
+libtoolize -f
 aclocal
 autoheader
 automake --foreign --add-missing
