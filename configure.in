@@ -1,5 +1,5 @@
 AC_INIT(tinu, [0.1b], [https://tracker.bteam.hu/projects/tinu])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE(tinu, [0.1b], [https://tracker.bteam.hu/projects/tinu])
 AC_CONFIG_SRCDIR([lib/tinu.h])
 
 AC_PROG_CC
@@ -10,6 +10,23 @@ AC_PROG_LIBTOOL
 
 LDFLAGS=-ldl
 CFLAGS=
+
+top_builddir=$ac_pwd
+
+case "$srcdir" in
+    /*)
+        top_srcdir=$srcdir
+        ;;
+    *)
+        oldsrcdir="$srcdir"
+        top_srcdir="`cd \"$srcdir\"; pwd`"
+        ;;
+esac
+
+CFLAGS="-I$top_srcdir/lib -I$top_builddir/lib $CFLAGS"
+CXXFLAGS="-I$top_srcdir/lib -I$top_builddir/lib $CXXFLAGS"
+
+AM_CONFIG_HEADER([lib/tinu/config.h])
 
 PKG_CHECK_MODULES(LIBGLIB, glib-2.0 >= 2.20)
 
@@ -98,7 +115,9 @@ AC_DEFINE_UNQUOTED(TEST_CTX_STACK_SIZE, $((stack_size * 1024)), [stack size when
 
 AC_SUBST(LDFLAGS)
 AC_SUBST(CFLAGS)
-AC_CONFIG_HEADERS([lib/tinu/config.h])
+AC_SUBST(CXXFLAGS)
+#AC_CONFIG_HEADERS([lib/tinu/config.h])
+
 AC_CONFIG_FILES([Makefile lib/Makefile example/Makefile coredumper/Makefile])
 AC_OUTPUT([tinu.pc])
 if test x$enable_cxxwrapper != xno; then
