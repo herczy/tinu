@@ -116,7 +116,6 @@ AC_DEFINE_UNQUOTED(TEST_CTX_STACK_SIZE, $((stack_size * 1024)), [stack size when
 AC_SUBST(LDFLAGS)
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
-#AC_CONFIG_HEADERS([lib/tinu/config.h])
 
 AC_CONFIG_FILES([Makefile lib/Makefile example/Makefile coredumper/Makefile])
 AC_OUTPUT([tinu.pc])
