@@ -3,7 +3,9 @@
 # source tree. 
 #
 
-libtoolize -f -c
+which libtoolize 2>/dev/null && LIBTOOLIZE=libtoolize || LIBTOOLIZE=glibtoolize
+
+$LIBTOOLIZE -f
 aclocal
 autoheader
 automake --foreign --add-missing
