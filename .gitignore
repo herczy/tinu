@@ -1,5 +1,9 @@
 *.swp
 *.swo
+\#*
+*~
+*.orig
+*.rej
 conthere.vim
 .old*
 .unused
@@ -18,3 +22,7 @@ example/example
 lib/tinu/config.h
 stamp-*
 libtool
+Makefile.in
+aclocal.m4
+/configure
+/ltmain.sh
