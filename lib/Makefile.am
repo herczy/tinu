@@ -9,6 +9,7 @@ include_HEADERS = tinu/backtrace.h \
                   tinu/log.h \
                   tinu/main.h \
                   tinu/message.h \
+                  tinu/meta.h \
                   tinu/test.h \
                   tinu/utils.h \
                   tinu/clist.h \
@@ -22,6 +23,7 @@ libtinu_la_SOURCES = backtrace.c \
                      log.c \
                      main.c \
                      message.c \
+                     meta.c \
                      test.c \
                      utils.c \
                      clist.c \

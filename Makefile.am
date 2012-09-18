@@ -3,7 +3,7 @@ SUBDIRS = coredumper
 else
 SUBDIRS =
 endif
-SUBDIRS += lib example
+SUBDIRS += lib example tools
 
 EXTRA_DIST = tinu.pc
 

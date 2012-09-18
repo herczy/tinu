@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+
+#
+# Tool to automatically collect test cases into a metainfo file
+#
+
+import optparse
+import re
+
+class TestCaseInfo(object):
+    def __init__(self, suite, test):
+        self.suite = suite
+        self.test = test
+
+        self.function = False
+        self.setup = False
+        self.cleanup = False
+
+    def has(self, key):
+        setattr(self, key, True)
+
+    def generate_declaration(self, output):
+        print >>output, "// BEGIN info for %s:%s" % (self.suite, self.test)
+
+        if self.function is not None:
+            print >>output, "void test_function_%s_%s(TestCase *, gpointer);" % (self.suite, self.test)
+
+        if self.setup is not None:
+            print >>output, "gpointer test_setup_%s_%s(TestCase *);" % (self.suite, self.test)
+
+        if self.cleanup is not None:
+            print >>output, "void test_cleanup_%s_%s(TestCase *, gpointer);" % (self.suite, self.test)
+
+        print >>output, "// END info for %s:%s" % (self.suite, self.test)
+
+    def generate_meta_entry(self, output):
+        entities = [ '"%s"' % self.suite, '"%s"' % self.test ]
+
+        def __append_function(key):
+            if getattr(self, key):
+                entities.append('&test_%s_%s_%s' % (key, self.suite, self.test))
+
+            else:
+                entities.append('NULL')
+
+        __append_function('setup')
+        __append_function('cleanup')
+        __append_function('function')
+
+        print >>output, "  { %s }," % ', '.join(entities)
+
+class MetainfoCollector(object):
+    def __init__(self):
+        self.__tests = []
+
+    def generate(self, output, enable_main):
+        print >>output, "/** THIS IS A GENERATED FILE, DO NOT MODIFY DIRECTLY! */"
+        print >>output
+
+        print >>output, "#include <tinu.h>"
+        print >>output
+
+        for test in self.__tests:
+            test.generate_declaration(output)
+            print >>output
+
+        print >>output, "const TinuMetaInfo __tinu_generated_meta_info[] = {"
+        for test in self.__tests:
+            test.generate_meta_entry(output)
+        print >>output, "  { NULL, NULL, NULL, NULL, NULL },"
+        print >>output, "};"
+
+        if enable_main:
+            print >>output
+            print >>output, "DEFINE_MAIN_FUNCTION(__tinu_generated_meta_info)";
+
+    def collect(self, filename):
+        FUNC_PREFIX = 'TEST_FUNCTION('
+        SETUP_PREFIX = 'TEST_SETUP('
+        CLEANUP_PREFIX = 'TEST_CLEANUP('
+
+        mapping = {}
+        pattern = re.compile(r'\s+')
+
+        def __process(prefix, key, line):
+            if line.startswith(prefix) and line[-1] == ')':
+                suite, case = line[len(prefix):-1].split(',')
+                mapping.setdefault(suite, {})
+                mapping[suite].setdefault(case, TestCaseInfo(suite, case))
+                mapping[suite][case].has(key)
+
+        with open(filename, 'r') as infile:
+            for line in infile:
+                line = pattern.sub('', line)
+
+                __process(FUNC_PREFIX, 'function', line)
+                __process(SETUP_PREFIX, 'setup', line)
+                __process(CLEANUP_PREFIX, 'cleanup', line)
+
+        for test_map in mapping.values():
+            self.__tests.extend(test for test in test_map.values())
+
+parser = optparse.OptionParser(usage='%prog [ -o output ] < input file(s) >')
+parser.add_option('-o', '--output', default='metainfo.c',
+                  help='Specify metainfo output (default: %default)')
+parser.add_option('-m', '--disable-main', action='store_true', default=False,
+                  help='Do not generate a main function into the metafile')
+
+opts, args = parser.parse_args()
+
+collector = MetainfoCollector()
+for arg in args:
+    collector.collect(arg)
+
+with open(opts.output, 'w') as output:
+    collector.generate(output, not opts.disable_main)

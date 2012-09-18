@@ -3,6 +3,7 @@
 
 #include <tinu/config.h>
 #include <tinu/main.h>
+#include <tinu/meta.h>
 #include <tinu/leakwatch.h>
 #include <tinu/utils.h>
 
