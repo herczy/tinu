@@ -20,4 +20,4 @@ cxxexample_LDADD = ../lib/libtinucxx.la
 endif
 
 addmeta-metainfo.c: addmeta.c
-	../tools/create_metafile -o $@ addmeta.c
+	../tools/tinu_create_metafile -o $@ addmeta.c
