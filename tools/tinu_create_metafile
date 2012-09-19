@@ -74,6 +74,20 @@ class MetainfoCollector(object):
             print >>output
             print >>output, "DEFINE_MAIN_FUNCTION(__tinu_generated_meta_info)";
 
+    def display_info(self):
+        for test in self.__tests:
+            flags = []
+            if test.function:
+                flags.append('function')
+
+            if test.setup:
+                flags.append('setup')
+
+            if test.cleanup:
+                flags.append('cleanup')
+
+            print "%s:%s [%s]" % (test.suite, test.test, '; '.join(flags))
+
     def collect(self, filename):
         FUNC_PREFIX = 'TEST_FUNCTION('
         SETUP_PREFIX = 'TEST_SETUP('
@@ -105,6 +119,8 @@ parser.add_option('-o', '--output', default='metainfo.c',
                   help='Specify metainfo output (default: %default)')
 parser.add_option('-m', '--disable-main', action='store_true', default=False,
                   help='Do not generate a main function into the metafile')
+parser.add_option('-i', '--info', action='store_true', default=False,
+                  help='Display tests collected from the input')
 
 opts, args = parser.parse_args()
 
@@ -112,5 +128,9 @@ collector = MetainfoCollector()
 for arg in args:
     collector.collect(arg)
 
-with open(opts.output, 'w') as output:
-    collector.generate(output, not opts.disable_main)
+if opts.info:
+    collector.display_info()
+
+else:
+    with open(opts.output, 'w') as output:
+        collector.generate(output, not opts.disable_main)
