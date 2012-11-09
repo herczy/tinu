@@ -16,7 +16,7 @@ bin_PROGRAMS += cxxexample
 cxxexample_SOURCES = cxxexample.cc
 cxxexample_CXXFLAGS = $(example_CFLAGS)
 cxxexample_LDFLAGS = $(example_LDFLAGS)
-cxxexample_LDADD = ../lib/libtinucxx.la
+cxxexample_LDADD = $(example_LDADD) ../lib/libtinucxx.la
 endif
 
 addmeta-metainfo.c: addmeta.c
