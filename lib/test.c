@@ -181,6 +181,7 @@ _test_case_run_single_test(TestContext *self, TestCase *test)
   gpointer leak_handler = (self->m_leakwatch ? tinu_leakwatch_simple(&leak_table) : NULL);
 
   gpointer stack = g_malloc0(TEST_CTX_STACK_SIZE);
+  gsize leaked_bytes;
 
   ucontext_t main_ctx;
 
@@ -256,8 +257,15 @@ test_case_run_done:
   if (leak_handler)
     {
       tinu_unregister_watch(leak_handler);
+
+      // Send summary to hooks
+      leaked_bytes = tinu_leakwatch_summary(leak_table);
+      _test_run_hooks(TEST_HOOK_LEAKINFO, test, leaked_bytes);
+
+      // Dump statistics
       if (g_test_case_current_result == TEST_PASSED)
         tinu_leakwatch_simple_dump(leak_table, LOG_WARNING);
+
       g_hash_table_destroy(leak_table);
     }
 

@@ -128,6 +128,9 @@ typedef enum
   /** Hook indicating the ending of a suite execution */
   TEST_HOOK_AFTER_SUITE,
 
+  /** Hook called with leak-watching results */
+  TEST_HOOK_LEAKINFO,
+
   /** The last hook */
   TEST_HOOK_MAX,
 

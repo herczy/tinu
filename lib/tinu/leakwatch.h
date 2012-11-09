@@ -65,6 +65,8 @@ typedef struct _MemoryEntry
 gpointer tinu_leakwatch_simple(GHashTable **result);
 void tinu_leakwatch_simple_dump(GHashTable *result, gint loglevel);
 
+gsize tinu_leakwatch_summary(GHashTable *result);
+
 __END_DECLS
 
 #endif

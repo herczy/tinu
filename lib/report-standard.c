@@ -34,6 +34,9 @@
 #include <glib/gstring.h>
 #include <glib/gtestutils.h>
 
+#define SIZE_1KB 1024
+#define SIZE_1MB SIZE_1KB * 1024
+
 static gboolean g_opt_stderr = FALSE;
 static FILE *g_opt_print_out;
 
@@ -61,6 +64,19 @@ _report_printf(const gchar *fmt0, ...)
   va_start(vl, fmt0);
   _report_vprintf(fmt0, vl);
   va_end(vl);
+}
+
+static char *
+_humanly_readable_size(char *dest, int max_size, gsize size)
+{
+  if (size >= SIZE_1MB)
+    snprintf(dest, max_size, "%.2lf MB", (double)size / (double)SIZE_1MB);
+  else if (size >= SIZE_1KB)
+    snprintf(dest, max_size, "%.2lf kB", (double)size / (double)SIZE_1KB);
+  else
+    snprintf(dest, max_size, "%u B", size);
+
+  return dest;
 }
 
 #define COL_OK(str) (colour ? "\033[32m" str "\033[0m" : str)
@@ -96,6 +112,7 @@ _std_report_show_suite(StatSuiteInfo *suite, StatisticsVerbosity verbosity, gboo
 void
 _std_report_show_case(StatTestInfo *test, StatisticsVerbosity verbosity, gboolean colour)
 {
+  char leaked_mem_str[128];
   const gchar *result_name = test_result_name(test->m_result);
   _report_printf("   Case ", COL_ENTRY("%-*s"), NULL, 33, test->m_test->m_name);
 
@@ -130,6 +147,14 @@ _std_report_show_case(StatTestInfo *test, StatisticsVerbosity verbosity, gboolea
     {
       fprintf(g_opt_print_out, " assertions passed: %d/%d",
         test->m_assertions_passed, test->m_assertions);
+    }
+
+  if (test->m_leaked_bytes)
+    {
+      fprintf(g_opt_print_out, " leaked: %s",
+        _humanly_readable_size(leaked_mem_str,
+                               sizeof(leaked_mem_str),
+                               test->m_leaked_bytes));
     }
   fprintf(g_opt_print_out, "\n");
 }

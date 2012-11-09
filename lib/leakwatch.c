@@ -237,6 +237,12 @@ _tinu_leakwatch_simple_dump(gpointer key, gpointer value, gpointer user_data)
 }
 
 void
+_tinu_leakwatch_summary(gpointer key, gpointer value, gpointer user_data)
+{
+  *(gsize *)user_data += ((MemoryEntry *)value)->m_size;
+}
+
+void
 _tinu_leakwatch_enable()
 {
   if (g_leakwatch_count == 0)
@@ -355,3 +361,10 @@ tinu_leakwatch_simple_dump(GHashTable *result, gint loglevel)
   g_hash_table_foreach(result, _tinu_leakwatch_simple_dump, (gpointer)loglevel);
 }
 
+gsize
+tinu_leakwatch_summary(GHashTable *result)
+{
+  gsize res = 0;
+  g_hash_table_foreach(result, _tinu_leakwatch_summary, (gpointer)&res);
+  return res;
+}

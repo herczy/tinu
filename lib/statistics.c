@@ -151,6 +151,22 @@ _stat_hook_suite_end(TestHookID hook_id, TestContext *context, gpointer user_dat
   self->m_suite_current = NULL;
 }
 
+static void
+_stat_hook_leakwatch(TestHookID hook_id, TestContext *context, gpointer user_data, va_list vl)
+{
+  TestStatistics *self = (TestStatistics *)user_data;
+
+  if (self->m_test_current->m_test != va_arg(vl, TestCase *))
+    {
+      log_error("Duplicate test case in test statistics",
+                msg_tag_str("suite", self->m_suite_current->m_suite->m_name),
+                msg_tag_str("testcase", self->m_test_current->m_test->m_name), NULL);
+      return;
+    }
+
+  self->m_test_current->m_leaked_bytes = va_arg(vl, gsize);
+}
+
 static TestHookCb g_stat_hooks[TEST_HOOK_MAX] = {
   [TEST_HOOK_ASSERT]            = &_stat_hook_assert,
   [TEST_HOOK_SIGNAL_ABORT]      = NULL,
@@ -159,6 +175,7 @@ static TestHookCb g_stat_hooks[TEST_HOOK_MAX] = {
   [TEST_HOOK_AFTER_TEST]        = &_stat_hook_case_end,
   [TEST_HOOK_BEFORE_SUITE]      = &_stat_hook_suite_begin,
   [TEST_HOOK_AFTER_SUITE]       = &_stat_hook_suite_end,
+  [TEST_HOOK_LEAKINFO]          = &_stat_hook_leakwatch,
 };
 
 TestStatistics *

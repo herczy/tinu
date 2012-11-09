@@ -54,6 +54,9 @@ typedef struct _StatTestInfo
   guint             m_assertions;
   /** Number of passed assertions in the test */
   guint             m_assertions_passed;
+
+  /** Bytes leaked during test execution */
+  gsize             m_leaked_bytes;
 } StatTestInfo;
 
 typedef struct _StatSuiteInfo
