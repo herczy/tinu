@@ -33,6 +33,7 @@
 
 #include <glib/gmem.h>
 #include <glib/gtestutils.h>
+#include <glib/gslice.h>
 
 struct _CListIterator
 {
