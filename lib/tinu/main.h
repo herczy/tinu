@@ -37,7 +37,7 @@
 #ifndef _TINU_MAIN_H
 #define _TINU_MAIN_H
 
-#include <glib/goption.h>
+#include <glib.h>
 
 #include <tinu/test.h>
 #include <tinu/statistics.h>

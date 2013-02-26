@@ -32,7 +32,7 @@
 #include <libelf.h>
 #include <libdwarf.h>
 
-#include <glib/gstrfuncs.h>
+#include <glib.h>
 
 #include <unistd.h>
 #include <fcntl.h>

@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <glib/gtypes.h>
+#include <glib.h>
 
 #include <tinu/message.h>
 

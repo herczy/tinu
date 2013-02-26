@@ -32,7 +32,7 @@
 #include <string.h>
 #include <signal.h>
 
-#include <glib/gutils.h>
+#include <glib.h>
 
 #include <tinu/config.h>
 #include <tinu/utils.h>

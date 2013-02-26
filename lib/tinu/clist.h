@@ -43,7 +43,7 @@
 #ifndef _TINU_CLIST_H
 #define _TINU_CLIST_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 
 __BEGIN_DECLS
 

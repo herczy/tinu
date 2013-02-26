@@ -35,9 +35,7 @@
 
 #include <dlfcn.h>
 
-#include <glib/gstring.h>
-#include <glib/gstrfuncs.h>
-#include <glib/gmem.h>
+#include <glib.h>
 
 #include <tinu/utils.h>
 #include <tinu/backtrace.h>

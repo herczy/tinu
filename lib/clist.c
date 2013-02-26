@@ -31,9 +31,7 @@
 #include <stdio.h>
 #include <tinu/clist.h>
 
-#include <glib/gmem.h>
-#include <glib/gtestutils.h>
-#include <glib/gslice.h>
+#include <glib.h>
 
 struct _CListIterator
 {

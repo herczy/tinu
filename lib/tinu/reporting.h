@@ -31,7 +31,7 @@
 #ifndef _TINU_REPORTING_H
 #define _TINU_REPORTING_H
 
-#include <glib/goption.h>
+#include <glib.h>
 
 #include <tinu/statistics.h>
 #include <tinu/names.h>

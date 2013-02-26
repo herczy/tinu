@@ -33,9 +33,7 @@
 
 #include <errno.h>
 
-#include <glib/gfileutils.h>
-#include <glib/gstrfuncs.h>
-#include <glib/gtestutils.h>
+#include <glib.h>
 
 #include <tinu/reporting.h>
 #include <tinu/log.h>

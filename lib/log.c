@@ -34,9 +34,7 @@
 
 #include <errno.h>
 
-#include <glib/glist.h>
-#include <glib/gslist.h>
-#include <glib/gmessages.h>
+#include <glib.h>
 
 #include <tinu/log.h>
 

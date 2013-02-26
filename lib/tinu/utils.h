@@ -31,8 +31,7 @@
 #ifndef _TINU_UTILS_H
 #define _TINU_UTILS_H
 
-#include <glib/gtypes.h>
-#include <glib/garray.h>
+#include <glib.h>
 
 #include <tinu/log.h>
 

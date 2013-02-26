@@ -30,8 +30,7 @@
 
 #include <tinu/statistics.h>
 
-#include <glib/gmem.h>
-#include <glib/gtestutils.h>
+#include <glib.h>
 
 #include <sys/times.h>
 

@@ -35,10 +35,7 @@
 
 #include <errno.h>
 
-#include <glib/gtestutils.h>
-#include <glib/gmem.h>
-#include <glib/gstrfuncs.h>
-#include <glib/gstring.h>
+#include <glib.h>
 
 #include <tinu/message.h>
 #include <tinu/log.h>

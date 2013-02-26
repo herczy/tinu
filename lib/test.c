@@ -48,7 +48,7 @@ typedef void (*sighandler_t)(int);
 #include <coredumper.h>
 #endif
 
-#include <glib/gtestutils.h>
+#include <glib.h>
 
 static sighandler_t g_sigsegv_handler = NULL;
 static sighandler_t g_sigabrt_handler = NULL;

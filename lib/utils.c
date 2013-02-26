@@ -36,7 +36,7 @@
 
 #include <tinu/utils.h>
 
-#include <glib/gmem.h>
+#include <glib.h>
 
 struct _SharedMemory
 {

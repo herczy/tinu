@@ -31,7 +31,7 @@
 #include <string.h>
 #include <cxxabi.h>
 
-#include <glib/gstrfuncs.h>
+#include <glib.h>
 
 #include <tinu/utils.h>
 #include <tinu/cxxwrap.h>

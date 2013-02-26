@@ -31,7 +31,7 @@
 #ifndef _TINU_LEAKWATCH_H
 #define _TINU_LEAKWATCH_H
 
-#include <glib/ghash.h>
+#include <glib.h>
 
 #include <tinu/backtrace.h>
 

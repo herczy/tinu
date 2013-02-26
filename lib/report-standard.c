@@ -31,8 +31,7 @@
 #include <tinu/statistics.h>
 #include <tinu/reporting.h>
 
-#include <glib/gstring.h>
-#include <glib/gtestutils.h>
+#include <glib.h>
 
 #define SIZE_1KB 1024
 #define SIZE_1MB SIZE_1KB * 1024

@@ -33,10 +33,7 @@
 #include <string.h>
 #include <malloc.h>
 
-#include <glib/gtestutils.h>
-#include <glib/gthread.h>
-#include <glib/ghash.h>
-#include <glib/glist.h>
+#include <glib.h>
 
 #include <tinu/utils.h>
 #include <tinu/leakwatch.h>

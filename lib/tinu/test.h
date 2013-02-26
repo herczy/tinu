@@ -39,8 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib/gtypes.h>
-#include <glib/garray.h>
+#include <glib.h>
 
 #include <tinu/log.h>
 #include <tinu/clist.h>

@@ -30,7 +30,7 @@
 
 #include <string.h>
 
-#include <glib/gmem.h>
+#include <glib.h>
 
 #include <tinu/names.h>
 

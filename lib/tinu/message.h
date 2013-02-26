@@ -34,9 +34,7 @@
 #include <stdarg.h>
 #include <syslog.h>
 
-#include <glib/gtypes.h>
-#include <glib/garray.h>
-#include <glib/gerror.h>
+#include <glib.h>
 
 #include <tinu/names.h>
 

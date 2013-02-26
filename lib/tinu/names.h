@@ -31,7 +31,7 @@
 #ifndef _TINU_NAMES_H
 #define _TINU_NAMES_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 
 typedef gint64 NameTableKey;
 

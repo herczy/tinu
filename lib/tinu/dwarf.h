@@ -31,9 +31,7 @@
 #ifndef _TINU_DWARF_H
 #define _TINU_DWARF_H
 
-#include <glib/gtree.h>
-#include <glib/gslist.h>
-#include <glib/gquark.h>
+#include <glib.h>
 
 #include <features.h>
 
